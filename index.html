@@ -1,0 +1,43 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+    <meta name="generator" content="Adobe GoLive" />
+    <title>Your Website</title>
+    <link rel="stylesheet" href="styles.css">
+    
+  </head>
+
+  <body>
+    <div class="outline">
+      <!-- <img
+        src="images/gradient.jpg"
+        alt=""
+        height="304"
+        width="800"
+        border="0"
+      /> -->
+      <div class="title"><h3>Henry's Midi experimentoz</h3></div>
+      <div class="content">
+
+        <div class="caption">
+          <h1>Simple random sequencer and things</h1>
+          <h2 id="numberOfNotes"></h2>
+        </div>
+        <div class="options">
+          <p>Auto Accompaniment Options</p>
+          <button id="start">Click to play</button>
+          <fieldset>
+            
+            <input name="confidencePreference" type="radio" >Always play best guess</input>
+            <br>
+            <input name="confidencePreference" type="radio" checked>Play based on confidence</input>
+          </fieldset>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+<script src="node_modules/webmidi/webmidi.min.js"></script>
+<script src="midi.js"></script>

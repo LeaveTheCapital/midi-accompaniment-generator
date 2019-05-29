@@ -1,13 +1,21 @@
-const scales = {
-  cMajorScale: [0, 2, 4, 5, 7, 9, 11],
-  gMajorScale: [0, 2, 4, 6, 7, 9, 11]
-};
+const mapping = [0, 2, 4, 5, 7, 9, 11];
+
+const scales = {};
+
+for (let i = 0; i < 12; i++) {
+  scales[i.toString()] = {
+    notes: mapping.map(note => (note + i) % 12),
+    numberOfMatches: 0,
+    confidence: 0
+  };
+}
 
 const notesPlayed = [];
 
 const numberOfNotesToConsider = 9;
 
-let playRandom = false;
+let playRandom = true;
+let playHarmony = true;
 
 const interval = 3;
 
@@ -40,81 +48,27 @@ WebMidi.enable(function(err) {
         notesPlayed.length
       );
 
-      const numberOfCMatches = last10Notes.reduce((acc, ele) => {
-        if (scales.cMajorScale.includes(ele)) {
-          acc++;
-        }
-        return acc;
-      }, 0);
-
-      // get all notes from all scales in a set
-      for (const scaleName in scales) {
-        if (scales.hasOwnProperty(scaleName)) {
-          const scale = scales[scaleName];
-          const allMatches = scale.filter(note =>
-            last10Notes.includes(note % 12)
-          );
-
-          allMatches.forEach(note => matchingNotes.add(note));
-        }
-      }
-
-      // get the scale with the most matches
-      for (const scaleName in scales) {
-        if (scales.hasOwnProperty(scaleName)) {
-          const scale = scales[scaleName];
-          const numberOfMatchesInScale = scale.reduce((acc, note) => {
-            if (last10Notes.includes(note % 12)) {
-              acc++;
-            }
-            return acc;
-          }, 0);
-          console.log(scaleName, "number of matches", numberOfMatchesInScale);
-          if (numberOfMatchesInScale > scaleWithMostMatches.numberMatches) {
-            scaleWithMostMatches.scaleName = scaleName;
-            scaleWithMostMatches.numberMatches = numberOfMatchesInScale;
-          }
-        }
-      }
-
-      const matchingNotesArr = Array.from(matchingNotes);
-
-      // matchingNotes.forEach(note => console.log(note));
-      console.log(matchingNotesArr);
-
-      // const cConfidence = numberOfCMatches / Math.max(last10Notes.length, 1);
-
-      console.log(
-        "c matches",
-        numberOfCMatches,
-        "notes considered",
-        last10Notes.length
-      );
+      const possibleNotes = getPotentialNotes(last10Notes);
 
       if (notesPlayed.length > 5) {
         const randomNote =
-          matchingNotesArr[
-            Math.ceil(Math.random() * (matchingNotesArr.length - 1))
-          ];
+          possibleNotes[Math.ceil(Math.random() * (possibleNotes.length - 1))];
 
         console.log("random note", randomNote);
 
-        const randomNoteFromScaleWithMostMatches =
-          scales[scaleWithMostMatches.scaleName][Math.ceil(Math.random() * 6)];
-
-        const randomOctave = Math.ceil(Math.random() * 3);
+        const randomOctave = Math.ceil(Math.random() * 2);
 
         const notePlusInterval = e.note.number + interval;
-        let noteToPlay = scales.cMajorScale.includes(notePlusInterval % 12)
+        let noteToPlay = possibleNotes.includes(notePlusInterval % 12)
           ? e.note.number + interval
           : notePlusInterval + 1;
 
-        if (playRandom) {
+        if (!playRandom) {
           // play a random note from notes already played
-          console.log("will play note", randomNote + 60 + randomOctave * 12);
+          console.log("will play note", randomNote + 48 + randomOctave * 12);
 
           output.playNote(randomNote + 48 + randomOctave * 12, 1, {
-            time: WebMidi.time + 30,
+            time: WebMidi.time + 10,
             duration: 500,
             velocity: 0.75
           });
@@ -131,7 +85,7 @@ WebMidi.enable(function(err) {
               velocity: 0.75
             }
           );
-        } else {
+        } else if (playHarmony) {
           // play harmony 3 or 4 semitones above
           console.log("will play note", noteToPlay);
           output.playNote(noteToPlay, 1, {
@@ -179,4 +133,72 @@ startButton.onclick = function() {
 function displayNumberOfNotes() {
   let h2 = document.getElementById("numberOfNotes");
   h2.innerText = `Considering last ${numberOfNotesToConsider} notes`;
+}
+
+function getPotentialNotes(notesPlayed) {
+  let mostSoFar = 0;
+
+  let countWithMostMatches = 0;
+
+  let scalesToUse = [];
+
+  let scaleOfChoice = undefined;
+
+  for (const scale in scales) {
+    if (scales.hasOwnProperty(scale)) {
+      const currentScale = scales[scale];
+      let nonMatches = 0;
+      const allMatches = notesPlayed.filter(note => {
+        const isMatch = -1 !== currentScale.notes.indexOf(note);
+        if (!isMatch) {
+          nonMatches++;
+        }
+        return isMatch;
+      });
+      const uniqueMatches = new Set(allMatches);
+      const numberOfMatches = uniqueMatches.size;
+      currentScale.confidence =
+        (notesPlayed.length - nonMatches) / notesPlayed.length;
+      if (numberOfMatches > mostSoFar) {
+        scalesToUse = [];
+        countWithMostMatches = 1;
+        mostSoFar = numberOfMatches;
+        scaleOfChoice = currentScale;
+        scalesToUse.push(scale);
+        if (numberOfMatches === 7) {
+          currentScale.numberOfMatches = numberOfMatches;
+          break;
+        }
+      } else if (numberOfMatches === mostSoFar) {
+        countWithMostMatches++;
+        scalesToUse.push(scale);
+      }
+      currentScale.numberOfMatches = numberOfMatches;
+    }
+  }
+
+  let finalNotes = scaleOfChoice.notes;
+
+  if (countWithMostMatches > 1) {
+    const potentialNotes = _.intersection(
+      ...scalesToUse.map(scale => scales[scale].notes)
+    );
+    const potentialNotesSet = new Set(potentialNotes);
+    finalNotes = Array.from(potentialNotesSet);
+  }
+
+  console.log("mostSoFar", mostSoFar);
+  console.log("countWithMostMatches", countWithMostMatches);
+  console.log(
+    "scalesToUse",
+    scalesToUse,
+    "confidenceInEach",
+    scalesToUse.map(scale => scales[scale].confidence)
+  );
+  console.log("scaleOfChoice", scaleOfChoice);
+  console.log("scaleOfChoice confidence", scaleOfChoice.confidence);
+
+  console.log("finalNotes", finalNotes);
+
+  return finalNotes;
 }

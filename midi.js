@@ -12,6 +12,8 @@ for (let i = 0; i < 12; i++) {
 
 const notesPlayed = [];
 
+let scaleWithMostMatches = [];
+
 const numberOfNotesToConsider = 9;
 
 let playRandom = true;
@@ -22,8 +24,6 @@ const interval = 3;
 let matchingNotes = new Set();
 
 displayNumberOfNotes();
-
-let scaleWithMostMatches = { scaleName: "", numberMatches: 0 };
 
 WebMidi.enable(function(err) {
   if (err) {
@@ -59,7 +59,7 @@ WebMidi.enable(function(err) {
         const randomOctave = Math.ceil(Math.random() * 2);
 
         const notePlusInterval = e.note.number + interval;
-        let noteToPlay = possibleNotes.includes(notePlusInterval % 12)
+        let noteToPlay = scaleWithMostMatches.includes(notePlusInterval % 12)
           ? e.note.number + interval
           : notePlusInterval + 1;
 
@@ -178,6 +178,8 @@ function getPotentialNotes(notesPlayed) {
   }
 
   let finalNotes = scaleOfChoice.notes;
+
+  scaleWithMostMatches = scaleOfChoice.notes;
 
   if (countWithMostMatches > 1) {
     const potentialNotes = _.intersection(

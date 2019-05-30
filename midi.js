@@ -16,14 +16,14 @@ let scaleWithMostMatches = [];
 
 const numberOfNotesToConsider = 9;
 
-let playRandom = true;
-let playHarmony = true;
+let accompanimentTypePreference = "harmony";
 
 const interval = 3;
 
 let matchingNotes = new Set();
 
 displayNumberOfNotes();
+attachAccompanimentTypeHandlers();
 
 WebMidi.enable(function(err) {
   if (err) {
@@ -63,7 +63,7 @@ WebMidi.enable(function(err) {
           ? e.note.number + interval
           : notePlusInterval + 1;
 
-        if (!playRandom) {
+        if (accompanimentTypePreference === "random") {
           // play a random note from notes already played
           console.log("will play note", randomNote + 48 + randomOctave * 12);
 
@@ -72,7 +72,7 @@ WebMidi.enable(function(err) {
             duration: 500,
             velocity: 0.75
           });
-        } else if (!playRandom) {
+        } else if (accompanimentTypePreference === "other") {
           // play a random note from scale with most matches from last n notes
           console.log("will play note", randomNoteFromScaleWithMostMatches);
 
@@ -85,7 +85,7 @@ WebMidi.enable(function(err) {
               velocity: 0.75
             }
           );
-        } else if (playHarmony) {
+        } else if (accompanimentTypePreference === "harmony") {
           // play harmony 3 or 4 semitones above
           console.log("will play note", noteToPlay);
           output.playNote(noteToPlay, 1, {
@@ -189,18 +189,28 @@ function getPotentialNotes(notesPlayed) {
     finalNotes = Array.from(potentialNotesSet);
   }
 
-  console.log("mostSoFar", mostSoFar);
-  console.log("countWithMostMatches", countWithMostMatches);
-  console.log(
-    "scalesToUse",
-    scalesToUse,
-    "confidenceInEach",
-    scalesToUse.map(scale => scales[scale].confidence)
-  );
-  console.log("scaleOfChoice", scaleOfChoice);
-  console.log("scaleOfChoice confidence", scaleOfChoice.confidence);
+  // console.log("mostSoFar", mostSoFar);
+  // console.log("countWithMostMatches", countWithMostMatches);
+  // console.log(
+  //   "scalesToUse",
+  //   scalesToUse,
+  //   "confidenceInEach",
+  //   scalesToUse.map(scale => scales[scale].confidence)
+  // );
+  // console.log("scaleOfChoice", scaleOfChoice);
+  // console.log("scaleOfChoice confidence", scaleOfChoice.confidence);
 
-  console.log("finalNotes", finalNotes);
+  // console.log("finalNotes", finalNotes);
 
   return finalNotes;
+}
+
+function attachAccompanimentTypeHandlers() {
+  const radios = document.getElementsByName("accompanimentType");
+  for (let i = 0; i < radios.length; i++) {
+    radios[i].onclick = function() {
+      accompanimentTypePreference = radios[i].value;
+      console.log("preference set to ", accompanimentTypePreference);
+    };
+  }
 }

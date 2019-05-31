@@ -1,7 +1,6 @@
+// Generate all major scales
 const mapping = [0, 2, 4, 5, 7, 9, 11];
-
 const scales = {};
-
 for (let i = 0; i < 12; i++) {
   scales[i.toString()] = {
     notes: mapping.map(note => (note + i) % 12),
@@ -11,19 +10,21 @@ for (let i = 0; i < 12; i++) {
 }
 
 const notesPlayed = [];
-
 let scaleWithMostMatches = [];
 
 const numberOfNotesToConsider = 9;
 
-let accompanimentTypePreference = "harmony";
+let inputChannel = 1;
+let outputChannel = 1;
 
+let accompanimentTypePreference = "harmony";
 const interval = 3;
 
 let matchingNotes = new Set();
 
 displayNumberOfNotes();
 attachAccompanimentTypeHandlers();
+attachMidiChannelChangeHandlers();
 
 WebMidi.enable(function(err) {
   if (err) {
@@ -35,7 +36,7 @@ WebMidi.enable(function(err) {
     let output = WebMidi.getOutputByName("EIE");
 
     console.log(input);
-    input.addListener("noteon", "all", function(e) {
+    input.addListener("noteon", inputChannel, function(e) {
       console.log(
         "Received 'noteon' message (" + e.note.name + e.note.octave + ").",
         e.note.number
@@ -67,7 +68,7 @@ WebMidi.enable(function(err) {
           // play a random note from notes already played
           console.log("will play note", randomNote + 48 + randomOctave * 12);
 
-          output.playNote(randomNote + 48 + randomOctave * 12, 1, {
+          output.playNote(randomNote + 48 + randomOctave * 12, outputChannel, {
             time: WebMidi.time + 10,
             duration: 500,
             velocity: 0.75
@@ -78,7 +79,7 @@ WebMidi.enable(function(err) {
 
           output.playNote(
             randomNoteFromScaleWithMostMatches + 48 + randomOctave * 12,
-            1,
+            outputChannel,
             {
               time: WebMidi.time + 30,
               duration: 500,
@@ -88,7 +89,7 @@ WebMidi.enable(function(err) {
         } else if (accompanimentTypePreference === "harmony") {
           // play harmony 3 or 4 semitones above
           console.log("will play note", noteToPlay);
-          output.playNote(noteToPlay, 1, {
+          output.playNote(noteToPlay, outputChannel, {
             time: WebMidi.time + 10,
             duration: 500,
             velocity: 0.75
@@ -213,4 +214,15 @@ function attachAccompanimentTypeHandlers() {
       console.log("preference set to ", accompanimentTypePreference);
     };
   }
+}
+
+function attachMidiChannelChangeHandlers() {
+  const inputChannelEle = document.getElementById("inputChannelSelect");
+  inputChannelEle.onclick = function(e) {
+    inputChannel = +e.target.value;
+  };
+  const inputChannelEle = document.getElementById("outputChannelSelect");
+  outputChannelEle.onclick = function(e) {
+    outputChannel = +e.target.value;
+  };
 }

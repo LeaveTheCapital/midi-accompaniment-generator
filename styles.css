@@ -6,6 +6,7 @@
   justify-content: flex-start;
   background-image: url("images/gradient.jpg");
   background-repeat: no-repeat;
+  background-size: cover;
 }
 .caption {
 }

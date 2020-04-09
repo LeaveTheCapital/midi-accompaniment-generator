@@ -9,6 +9,7 @@ for (let i = 0; i < 12; i++) {
   };
 }
 
+console.log("starting...");
 const notesPlayed = [];
 let scaleWithMostMatches = [];
 
@@ -26,24 +27,33 @@ displayNumberOfNotes();
 attachAccompanimentTypeHandlers();
 attachMidiChannelChangeHandlers();
 
+// const output = JZZ()
+// .or("Cannot start MIDI engine!")
+// .openMidiOut()
+// .or("Cannot open MIDI Out port!")
+// .and(() => {
+//   console.log("hello");
+// });
+
 const input = JZZ()
-  .openMidiIn()
   .or("Cannot start MIDI engine!")
+  .openMidiIn()
   .and(function() {
     console.log("MIDI-in ", this.name());
+  })
+  .connect(JZZ().openMidiOut())
+  .connect(msg => {
+    const a = msg.toString();
+    if (!a.includes("Timing") && !a.includes("Active")) {
+      var note = msg.getNote();
+      console.log(a);
+      console.log(note);
+      // console.log(msg);
+      input.note(outputChannel, note, 100, 500);
+    }
   });
 
-const output = JZZ()
-  .or("Cannot start MIDI engine!")
-  .openMidiOut()
-  .or("Cannot open MIDI Out port!");
-
-// JZZ().or("blah");
-
 // JZZ.enable(function(err) {
-//   if (err) {
-//     console.log("WebMidi could not be enabled.", err);
-//   } else {
 //     console.log("WebMidi enabled!");
 
 //     let input = JZZ.getInputByName("EIE");
@@ -114,36 +124,36 @@ const output = JZZ()
 //   }
 // });
 
-let startButton = document.getElementById("start");
-startButton.onclick = function() {
-  console.log(WebMidi.inputs);
-  console.log(WebMidi.outputs);
-  let output = WebMidi.getOutputByName("EIE");
-  console.log("yolo", output);
-  for (let i = 1; i < 9; i++) {
-    output.playNote(`C${i}`, 1, { time: WebMidi.time * i });
-    output.playNote(`F${i}`, 1, { time: WebMidi.time * i + 150 });
-    output.playNote(`A${i}`, 1, { time: WebMidi.time * i + 225 });
-    console.log(WebMidi.time);
-    let context = new AudioContext();
-    let oscillator = context.createOscillator();
-    console.log(oscillator);
-    oscillator.frequency.value = 200;
+// let startButton = document.getElementById("start");
+// startButton.onclick = function() {
+//   console.log(WebMidi.inputs);
+//   console.log(WebMidi.outputs);
+//   let output = WebMidi.getOutputByName("EIE");
+//   console.log("yolo", output);
+//   for (let i = 1; i < 9; i++) {
+//     output.playNote(`C${i}`, 1, { time: WebMidi.time * i });
+//     output.playNote(`F${i}`, 1, { time: WebMidi.time * i + 150 });
+//     output.playNote(`A${i}`, 1, { time: WebMidi.time * i + 225 });
+//     console.log(WebMidi.time);
+//     let context = new AudioContext();
+//     let oscillator = context.createOscillator();
+//     console.log(oscillator);
+//     oscillator.frequency.value = 200;
 
-    oscillator.connect(context.destination);
+//     oscillator.connect(context.destination);
 
-    oscillator.start(0);
-  }
+//     oscillator.start(0);
+//   }
 
-  /* output.playNote("D6", 1, {time: 600});
+/* output.playNote("D6", 1, {time: 600});
 		output.playNote(100, 1, {time: 800});		
 		output.playNote("G2", 1, {time: 100}); */
-  /* .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
+/* .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
     .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
     .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
     .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
     .stopNote("G5", 1, {time: 1000});    // After 1.2 s. */
-};
+// };
 
 function displayNumberOfNotes() {
   let h2 = document.getElementById("numberOfNotes");

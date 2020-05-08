@@ -1,5 +1,8 @@
 const { getPotentialNotes } = require("./src/getPotentialNotes");
-const { generateMajorScales } = require("./src/generateMajorScales");
+const {
+  generateMajorScales,
+  scaleLookup,
+} = require("./src/generateMajorScales");
 
 const WebMidi = require("webmidi");
 
@@ -48,7 +51,22 @@ function noteOnListener(e) {
     e.note.number
   );
 
-  notesPlayed.push(e.note.number % 12);
+  const pureNoteNumber = e.note.number % 12;
+  const pureNoteName = scaleLookup[pureNoteNumber.toString()];
+  const matchingKeyFromKeyboardEle = document.getElementsByClassName(
+    pureNoteName
+  )[0];
+  const activeKeyboardElements = Array.from(
+    document.getElementsByClassName("active")
+  );
+  if (activeKeyboardElements.length > 0) {
+    activeKeyboardElements.forEach(function (el) {
+      el.classList.remove("active");
+    });
+  }
+  matchingKeyFromKeyboardEle.className += " active";
+
+  notesPlayed.push(pureNoteNumber);
 
   const lastNNotes = notesPlayed.slice(
     -numberOfNotesToConsider,

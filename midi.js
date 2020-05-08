@@ -1,29 +1,10 @@
-// Generate all major scales
-const mapping = [0, 2, 4, 5, 7, 9, 11];
-const scaleLookup = {
-  "0": "C",
-  "1": "C#",
-  "2": "D",
-  "3": "D#",
-  "4": "E",
-  "5": "F",
-  "6": "F#",
-  "7": "G",
-  "8": "G#",
-  "9": "A",
-  "10": "A#",
-  "11": "B",
-};
+const { getPotentialNotes } = require("./src/getPotentialNotes");
+const { generateMajorScales } = require("./src/generateMajorScales");
 
-const scales = {};
-for (let i = 0; i < 12; i++) {
-  scales[i.toString()] = {
-    notes: mapping.map((note) => (note + i) % 12),
-    numberOfMatches: 0,
-    confidence: 0,
-    name: scaleLookup[i],
-  };
-}
+const WebMidi = require("webmidi");
+
+// Generate all major scales
+const scales = generateMajorScales();
 
 const notesPlayed = [];
 let scaleWithMostMatches = [];
@@ -74,7 +55,14 @@ function noteOnListener(e) {
     notesPlayed.length
   );
 
-  const possibleNotes = getPotentialNotes(lastNNotes);
+  const { possibleNotes, scaleOfChoice } = getPotentialNotes(
+    lastNNotes,
+    scales,
+    scaleWithMostMatches
+  );
+
+  const detectedScaleElement = document.getElementById("detected-scale");
+  detectedScaleElement.innerText = "Detected scale: " + scaleOfChoice.name;
 
   if (notesPlayed.length > 5) {
     const randomNote =
@@ -88,10 +76,10 @@ function noteOnListener(e) {
       ? (e.note.number + interval) % 127
       : notePlusInterval + 1;
 
-    if (accompanimentTypePreference === "random") {
+    if (accompanimentTypePreference === "random_from_already_played") {
       // play a random note from notes already played
       console.log(
-        "random: will play note",
+        "random_from_already_played: will play note",
         randomNote + 48 + randomOctave * 12
       );
 
@@ -100,9 +88,12 @@ function noteOnListener(e) {
         duration: 500,
         velocity: 0.75,
       });
-    } else if (accompanimentTypePreference === "other") {
+    } else if (accompanimentTypePreference === "random_from_detected_scale") {
       // play a random note from scale with most matches from last n notes
-      console.log("other: will play note", randomNoteFromScaleWithMostMatches);
+      console.log(
+        "random_from_detected_scale: will play note",
+        randomNoteFromScaleWithMostMatches
+      );
 
       output.playNote(
         randomNoteFromScaleWithMostMatches + 48 + randomOctave * 12,
@@ -124,6 +115,7 @@ function noteOnListener(e) {
     }
   }
 }
+
 WebMidi.enable(function (err) {
   if (err) {
     console.log("WebMidi could not be enabled.", err);
@@ -187,79 +179,6 @@ startButton.onclick = function () {
 function displayNumberOfNotes() {
   let h2 = document.getElementById("numberOfNotes");
   h2.innerText = `Considering last ${numberOfNotesToConsider} notes`;
-}
-
-function getPotentialNotes(notesPlayed) {
-  let mostSoFar = 0;
-
-  let countWithMostMatches = 0;
-
-  let scalesToUse = [];
-
-  let scaleOfChoice = undefined;
-
-  for (const scale in scales) {
-    if (scales.hasOwnProperty(scale)) {
-      const currentScale = scales[scale];
-      let nonMatches = 0;
-      const allMatches = notesPlayed.filter((note) => {
-        const isMatch = -1 !== currentScale.notes.indexOf(note);
-        if (!isMatch) {
-          nonMatches++;
-        }
-        return isMatch;
-      });
-      const uniqueMatches = new Set(allMatches);
-      const numberOfMatches = uniqueMatches.size;
-      currentScale.confidence =
-        (notesPlayed.length - nonMatches) / notesPlayed.length;
-      if (numberOfMatches > mostSoFar) {
-        scalesToUse = [];
-        countWithMostMatches = 1;
-        mostSoFar = numberOfMatches;
-        scaleOfChoice = currentScale;
-        scalesToUse.push(scale);
-        if (numberOfMatches === 7) {
-          currentScale.numberOfMatches = numberOfMatches;
-          break;
-        }
-      } else if (numberOfMatches === mostSoFar) {
-        countWithMostMatches++;
-        scalesToUse.push(scale);
-      }
-      currentScale.numberOfMatches = numberOfMatches;
-    }
-  }
-
-  const detectedScaleElement = document.getElementById("detected-scale");
-  detectedScaleElement.innerText = "Detected scale: " + scaleOfChoice.name;
-
-  let finalNotes = scaleOfChoice.notes;
-
-  scaleWithMostMatches = scaleOfChoice.notes;
-
-  if (countWithMostMatches > 1) {
-    const potentialNotes = _.intersection(
-      ...scalesToUse.map((scale) => scales[scale].notes)
-    );
-    const potentialNotesSet = new Set(potentialNotes);
-    finalNotes = Array.from(potentialNotesSet);
-  }
-
-  // console.log("mostSoFar", mostSoFar);
-  // console.log("countWithMostMatches", countWithMostMatches);
-  // console.log(
-  //   "scalesToUse",
-  //   scalesToUse,
-  //   "confidenceInEach",
-  //   scalesToUse.map(scale => scales[scale].confidence)
-  // );
-  // console.log("scaleOfChoice", scaleOfChoice);
-  // console.log("scaleOfChoice confidence", scaleOfChoice.confidence);
-
-  // console.log("finalNotes", finalNotes);
-
-  return finalNotes;
 }
 
 function attachAccompanimentTypeHandlers() {

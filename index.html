@@ -44,9 +44,9 @@
           <p>Auto Accompaniment Options</p>
           <button id="start">Click to play</button>
           <fieldset>
-            <input name="accompaniment-type" value="random" type="radio">Play Random note from notes already played</input>
+            <input name="accompaniment-type" value="random_from_already_played" type="radio">Play Random note from notes already played</input>
             <br>
-            <input name="accompaniment-type" value="other" type="radio" checked>Play Random note from detected scales</input>
+            <input name="accompaniment-type" value="random_from_detected_scale" type="radio" checked>Play Random note from detected scales</input>
             <br>
             <input name="accompaniment-type" value="harmony" type="radio">Play harmony note from current scale</input>
           </fieldset>
@@ -58,6 +58,4 @@
     </div>
   </body>
 </html>
-<script src="node_modules/webmidi/webmidi.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.5/lodash.min.js"></script>
-<script src="midi.js"></script>
+<script src="bundle.js"></script>

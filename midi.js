@@ -17,7 +17,7 @@ const numberOfNotesToConsider = 9;
 let inputChannel = 1;
 let outputChannel = 1;
 
-let accompanimentTypePreference = "random";
+let accompanimentTypePreference = "random_from_detected_scale";
 const interval = 3;
 
 displayNumberOfNotes();
@@ -79,11 +79,13 @@ function noteOnListener(e) {
     scaleWithMostMatches
   );
 
+  scaleWithMostMatches = scaleOfChoice.notes;
+
   const detectedScaleElement = document.getElementById("detected-scale");
   detectedScaleElement.innerText = "Detected scale: " + scaleOfChoice.name;
 
   if (notesPlayed.length > 5) {
-    const randomNote =
+    const randomNoteFromScaleWithMostMatches =
       possibleNotes[Math.ceil(Math.random() * (possibleNotes.length - 1))];
 
     const randomOctave = Math.ceil(Math.random() * 2);
@@ -91,17 +93,18 @@ function noteOnListener(e) {
     // modulo 127 so note doesn't go above 127
     const notePlusInterval = (e.note.number + interval) % 127;
     let noteToPlay = scaleWithMostMatches.includes(notePlusInterval % 12)
-      ? (e.note.number + interval) % 127
-      : notePlusInterval + 1;
+      ? notePlusInterval
+      : (notePlusInterval + 1) % 127;
 
     if (accompanimentTypePreference === "random_from_already_played") {
+      const randomNoteFromAlreadyPlayed = lastNNotes[Math.ceil(Math.random() * (lastNNotes.length - 1))];
       // play a random note from notes already played
       console.log(
         "random_from_already_played: will play note",
-        randomNote + 48 + randomOctave * 12
+        scaleLookup[randomNoteFromAlreadyPlayed]
       );
 
-      output.playNote(randomNote + 48 + randomOctave * 12, outputChannel, {
+      output.playNote(randomNoteFromAlreadyPlayed + 48 + randomOctave * 12, outputChannel, {
         time: WebMidi.time + 10,
         duration: 500,
         velocity: 0.75,
@@ -110,7 +113,7 @@ function noteOnListener(e) {
       // play a random note from scale with most matches from last n notes
       console.log(
         "random_from_detected_scale: will play note",
-        randomNoteFromScaleWithMostMatches
+        scaleLookup[randomNoteFromScaleWithMostMatches]
       );
 
       output.playNote(
@@ -124,7 +127,7 @@ function noteOnListener(e) {
       );
     } else if (accompanimentTypePreference === "harmony") {
       // play harmony 3 or 4 semitones above
-      console.log("harmony: will play note", noteToPlay);
+      console.log("harmony: will play note", scaleLookup[noteToPlay % 12]);
       output.playNote(noteToPlay, outputChannel, {
         time: WebMidi.time + 10,
         duration: 500,

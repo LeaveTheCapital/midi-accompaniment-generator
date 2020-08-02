@@ -1,7 +1,11 @@
 const { intersection } = require("lodash");
 
-// calculates which scale(s) are being played with highest likelihood, returns the first scale and the potential notes
-// if more than one scale, will get only potential notes which are in ALL of those scales to avoid playing notes out of key.
+/**
+ * getPotentialNotes calculates which scale(s) are being played with highest likelihood, returns the first scale and the potential notes. If more than one scale, will get only potential notes which are in ALL of those scales to avoid playing notes out of key.
+ * @param  {Array} notesPlayed recently played notes
+ * @param  {scales} scales object containing all major scale information
+ * @return {Object}      possibleNotes - array of all notes which can be played as accompaniment, scaleOfChoice - most likely scale being played 
+ */
 function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
   let mostSoFar = 0;
   let countWithMostMatches = 0;

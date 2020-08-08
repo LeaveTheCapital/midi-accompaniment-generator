@@ -1,0 +1,77 @@
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  <title>Midi Accompaniment Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <div class="outline">
+
+    <div class="title">
+      <h3>Henry's Midi Accompaniment Generator</h3>
+    </div>
+    <div class="content">
+
+      <div class="caption">
+        <h1>Generates random or harmony notes in key with midi input</h1>
+        <h2 id="numberOfNotes"></h2>
+        <p id="display"></p>
+        <label for="input-device">Choose a midi input:</label>
+
+        <select name="input-device" id="input-device-select">
+          <option value="">--Please choose an input--</option>
+        </select>
+        <label for="output-device">Choose a midi output:</label>
+
+        <select name="output-device" id="output-device-select">
+          <option value="">--Please choose an output--</option>
+        </select>
+        <label for="input-channel">Input Midi Channel</label>
+        <select name="input-channel" id="input-channel-select" value="1">Input Midi Channel</select>
+        <label for="output-channel">Output Midi Channel</label>
+        <select name="output-channel" id="output-channel-select" value="1">Output Midi Channel</select>
+      </div>
+      <div class="options">
+        <p>Auto Accompaniment Options</p>
+        <button id="start">Click to play</button>
+        <fieldset>
+          <input name="accompaniment-type" value="random_from_already_played" type="radio">Play Random note
+          from notes
+          already played</input>
+          <br>
+          <input name="accompaniment-type" value="random_from_detected_scale" type="radio" checked>Play Random
+          note from
+          detected scales</input>
+          <br>
+          <input name="accompaniment-type" value="harmony" type="radio">Play harmony note from current
+          scale</input>
+        </fieldset>
+      </div>
+      <div class="scales-display">
+        <h2 id="detected-scale">Detected scale:</h2>
+      </div>
+    </div>
+    <ul class="set">
+      <li class="white F"></li>
+      <li class="black F#"></li>
+      <li class="white G"></li>
+      <li class="black G#"></li>
+      <li class="white A"></li>
+      <li class="black A#"></li>
+      <li class="white B"></li>
+      <li class="white C"></li>
+      <li class="black C#"></li>
+      <li class="white D"></li>
+      <li class="black D#"></li>
+      <li class="white E"></li>
+    </ul>
+  </div>
+</body>
+
+</html>
+<script src="bundle.js"></script>

@@ -1,8 +1,8 @@
-const { getPotentialNotes } = require("./src/getPotentialNotes");
+const { getPotentialNotes } = require("./getPotentialNotes");
 const {
   generateMajorScales,
   scaleLookup,
-} = require("./src/generateMajorScales");
+} = require("./generateMajorScales");
 
 const WebMidi = require("webmidi");
 

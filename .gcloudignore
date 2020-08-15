@@ -1,0 +1,4 @@
+#!include:.gitignore
+/test
+index2.html
+package*

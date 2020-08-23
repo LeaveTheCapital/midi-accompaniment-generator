@@ -19,10 +19,14 @@
   font-family: "Lucida Grande", Arial, sans-serif;
   font-weight: normal;
   text-align: center;
+  padding-bottom: 0.5rem;
 }
 .settings-card:hover {
   box-shadow: 10px 10px 0px 1px #7790bdd2;
   transition: box-shadow 0.1s ease;
+}
+.settings-card select:hover {
+  background-color: #eee;
 }
 
 .content {
@@ -34,6 +38,8 @@
 
 .fit-content {
   max-width: fit-content;
+  padding: 0.1rem;
+  margin: 0.2rem 0 0.2rem 0;
 }
 
 .title {
@@ -44,15 +50,12 @@
   font-size: large;
 }
 
-/* input.radio {
-  width: auto;
-} */
 p {
   color: #666;
   font-size: 16px;
   font-family: "Lucida Grande", Arial, sans-serif;
   font-weight: normal;
-  margin-top: 0;
+  /* margin-top: 0; */
 }
 h1 {
   color: #666;
@@ -93,10 +96,12 @@ a {
 #detected-scale {
   font-size: 5rem;
   text-align: center;
-  padding-top: 1rem;
+  padding: 0;
+  margin: 0;
   background: -webkit-linear-gradient(left, purple, orange);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  min-height: 5.8rem;
 }
 
 * {

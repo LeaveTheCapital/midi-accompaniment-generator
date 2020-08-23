@@ -12,3 +12,6 @@ ability to pipe output to webaudio instead of a midi out
 
 Next >>
 hook up onscreen keyboard to midi input channel to allow playing of notes directly
+
+Next >>
+consider last n unique notes rather than last n notes

@@ -26,15 +26,15 @@ appendOptionsToChannelSelectElement("input");
 appendOptionsToChannelSelectElement("output");
 appendChannelSelectListeners();
 
-const addSelectedIfFirstOption = (index) => (index === 0 ? " selected" : "");
 
-function appendOptionsToDeviceSelectElement(namesArray, selectEle) {
+function appendOptionsToDeviceSelectElement(namesArray, selectEle, inputOrOutput) {
+  const addSelectedIfFirstOptionOrFoundInLocalStorage = (index, deviceName, inputOrOutput) => (index === 0 || deviceName === localStorage.getItem(`${inputOrOutput}Device`) ? " selected" : "");
   namesArray.forEach((inputName, index) => {
     const optionEle =
       "<option value='" +
       index +
       "'" +
-      addSelectedIfFirstOption(index) +
+      addSelectedIfFirstOptionOrFoundInLocalStorage(index, inputName, inputOrOutput) +
       ">" +
       inputName +
       "</option>";
@@ -145,18 +145,18 @@ WebMidi.enable(function (err) {
 
     const inputSelectEle = document.getElementById("input-device-select");
     const inputNames = WebMidi.inputs.map((input) => input.name);
-    appendOptionsToDeviceSelectElement(inputNames, inputSelectEle);
+    appendOptionsToDeviceSelectElement(inputNames, inputSelectEle, 'input');
     inputSelectEle.addEventListener("change", inputSelectChanged);
 
     const outputSelectEle = document.getElementById("output-device-select");
     const outputNames = WebMidi.outputs.map((input) => input.name);
-    appendOptionsToDeviceSelectElement(outputNames, outputSelectEle);
+    appendOptionsToDeviceSelectElement(outputNames, outputSelectEle, 'output');
     outputSelectEle.addEventListener("change", outputSelectChanged);
 
     const selectedInputElementChosenIndex = inputSelectEle.value;
     const selectedOutputElementChosenIndex = outputSelectEle.value;
-
-    input = WebMidi.inputs[selectedInputElementChosenIndex];
+    const locallyStoredInput = localStorage.getItem('inputDevice');
+    input = WebMidi.inputs.find(input => input.name === locallyStoredInput) || WebMidi.inputs[selectedInputElementChosenIndex];
     output = WebMidi.outputs[selectedOutputElementChosenIndex];
 
     input.addListener("noteon", inputChannel, noteOnListener);
@@ -238,10 +238,12 @@ function inputSelectChanged(evt) {
   input.removeListener("noteon", inputChannel, noteOnListener);
   input = WebMidi.inputs[evt.target.value];
   input.addListener("noteon", inputChannel, noteOnListener);
+  localStorage.setItem('inputDevice', input.name);
   console.log("input is now", input.name);
 }
 
 function outputSelectChanged(evt) {
   output = WebMidi.outputs[evt.target.value];
+  localStorage.setItem('outputDevice', output.name);
   console.log("output is now", output.name);
 }

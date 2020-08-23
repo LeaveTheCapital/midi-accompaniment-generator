@@ -17399,7 +17399,7 @@ function noteOnListener(e) {
   scaleWithMostMatches = scaleOfChoice.notes;
 
   const detectedScaleElement = document.getElementById("detected-scale");
-  detectedScaleElement.innerText = "Detected scale: " + scaleOfChoice.name;
+  detectedScaleElement.innerText = scaleOfChoice.name;
 
   if (notesPlayed.length > 5) {
     const randomNoteFromScaleWithMostMatches =
@@ -17515,8 +17515,8 @@ startButton.onclick = function () {
 };
 
 function displayNumberOfNotes() {
-  let h2 = document.getElementById("numberOfNotes");
-  h2.innerText = `Considering last ${numberOfNotesToConsider} notes`;
+  let ele = document.getElementById("numberOfNotes");
+  ele.innerHTML = `Considering last <span class="number-of-notes">${numberOfNotesToConsider}</span> notes`;
 }
 
 function attachAccompanimentTypeHandlers() {

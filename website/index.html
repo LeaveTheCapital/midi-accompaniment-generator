@@ -13,12 +13,12 @@
 <body>
   <div class="outline">
     <div class="title">
-      <h3>Henry's Midi Accompaniment Generator</h3>
-      <h1>Generates random or harmony notes in key with midi input</h1>
+      <h1>Henry's Midi Accompaniment Generator</h1>
+      <h2>Generates random or harmony notes in key with midi input</h2>
     </div>
     <div class="content">
       <div class="settings-card">
-        <h2>Midi Settings</h2>
+        <h3>Midi Settings</h3>
         <p id="display"></p>
         <!-- <div class="select-input"> -->
         <label for="input-device">Choose a midi input:</label>
@@ -37,7 +37,7 @@
           Channel</select>
       </div>
       <div class="settings-card">
-        <h2>Auto Accompaniment Options</h2>
+        <h3>Auto Accompaniment Options</h3>
         <button id="start">Click to play</button>
         <fieldset>
           <input name="accompaniment-type" value="random_from_already_played" type="radio">Play Random note
@@ -54,23 +54,26 @@
         <p id="numberOfNotes"></p>
       </div>
       <div class="settings-card">
-        <h2 id="detected-scale">Detected scale:</h2>
+        <h3>Detected scale:</h3>
+        <p id="detected-scale"></p>
       </div>
     </div>
-    <ul class="set">
-      <li class="white F"></li>
-      <li class="black F#"></li>
-      <li class="white G"></li>
-      <li class="black G#"></li>
-      <li class="white A"></li>
-      <li class="black A#"></li>
-      <li class="white B"></li>
-      <li class="white C"></li>
-      <li class="black C#"></li>
-      <li class="white D"></li>
-      <li class="black D#"></li>
-      <li class="white E"></li>
-    </ul>
+    <div class="onscreen-keyboard">
+      <ul class="set">
+        <li class="white F"></li>
+        <li class="black F#"></li>
+        <li class="white G"></li>
+        <li class="black G#"></li>
+        <li class="white A"></li>
+        <li class="black A#"></li>
+        <li class="white B"></li>
+        <li class="white C"></li>
+        <li class="black C#"></li>
+        <li class="white D"></li>
+        <li class="black D#"></li>
+        <li class="white E"></li>
+      </ul>
+    </div>
   </div>
 </body>
 

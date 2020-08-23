@@ -13,3 +13,6 @@ remember your last choice of midi in/out device
 
 Next >>
 ability to pipe output to webaudio instead of a midi out
+
+Next >>
+hook up onscreen keyboard to midi input channel to allow

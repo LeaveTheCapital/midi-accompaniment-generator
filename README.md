@@ -11,3 +11,5 @@ MIDI-OX
 Next >>
 remember your last choice of midi in/out device
 
+Next >>
+ability to pipe output to webaudio instead of a midi out

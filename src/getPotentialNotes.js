@@ -4,13 +4,13 @@ const { intersection } = require("lodash");
  * getPotentialNotes calculates which scale(s) are being played with highest likelihood, returns the first scale and the potential notes. If more than one scale, will get only potential notes which are in ALL of those scales to avoid playing notes out of key.
  * @param  {Array} notesPlayed recently played notes
  * @param  {scales} scales object containing all major scale information
- * @return {Object}      possibleNotes - array of all notes which can be played as accompaniment, scaleOfChoice - most likely scale being played 
+ * @return {Object}      possibleNotes - array of all notes which can be played as accompaniment, scaleOfChoice - most likely scale being played
  */
 function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
   let mostSoFar = 0;
   let countWithMostMatches = 0;
   let scalesToUse = [];
-  let scaleOfChoice = undefined;
+  let scaleOfChoice = null;
   for (const scale in scales) {
     if (scales.hasOwnProperty(scale)) {
       const currentScale = scales[scale];
@@ -49,20 +49,12 @@ function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
     const potentialNotes = intersection(
       ...scalesToUse.map((scale) => scales[scale].notes)
     );
+    console.log({ potentialNotes });
+    console.log({ scalesToUse });
     const potentialNotesSet = new Set(potentialNotes);
     finalNotes = Array.from(potentialNotesSet);
   }
-  // console.log("mostSoFar", mostSoFar);
-  // console.log("countWithMostMatches", countWithMostMatches);
-  // console.log(
-  //   "scalesToUse",
-  //   scalesToUse,
-  //   "confidenceInEach",
-  //   scalesToUse.map((scale) => scales[scale].confidence)
-  // );
-  // console.log("scaleOfChoice", scaleOfChoice);
-  // console.log("scaleOfChoice confidence", scaleOfChoice.confidence);
-  console.log("finalNotes", finalNotes);
+
   return { possibleNotes: finalNotes, scaleOfChoice: scaleOfChoice };
 }
 exports.getPotentialNotes = getPotentialNotes;

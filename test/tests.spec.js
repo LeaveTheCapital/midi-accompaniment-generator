@@ -1,5 +1,20 @@
+const spy = jest.spyOn(document, "getElementById");
+const mockElement = document.createElement("div");
+spy.mockReturnValue(mockElement);
+
+const spy2 = jest.spyOn(document, "getElementsByClassName");
+const mockElement2 = document.createElement("div");
+spy2.mockReturnValue([mockElement2]);
+
+jest.mock("webmidi", () => ({
+  enable: (callback) => callback(null),
+  inputs: [{ addListener: () => {} }],
+  outputs: [{ playNote: () => {} }],
+}));
+
 const { getPotentialNotes } = require("../src/getPotentialNotes");
 const { generateMajorScales } = require("../src/generateMajorScales");
+const { noteOnListener } = require("../src/midi");
 const chai = require("chai");
 const expect = chai.expect;
 const scales = generateMajorScales();
@@ -35,8 +50,6 @@ var combine = function (a, min) {
 
 const subsets = combine(allNotes, 2);
 
-// console.log("subsets", subsets);
-
 const arrayOfArrays = [];
 const lengthOfEachArrayOfNotes = 9;
 const numberOfArraysToCreate = 100;
@@ -50,14 +63,12 @@ for (let i = 0; i < numberOfArraysToCreate; i++) {
   arrayOfArrays.push(randomNotes);
 }
 
-// run through a lot of random arrays of notes to make sure nothing throws an error
-
-arrayOfArrays.forEach((subset) => {
-  const lastNNotes = subset.slice(-9, subset.length);
-  const res = getPotentialNotes(lastNNotes, scales, scaleWithMostMatches);
-});
-
 describe("getPotentialNotes.js", function () {
+  // run through a lot of random arrays of notes to make sure nothing throws an error
+  arrayOfArrays.forEach((subset) => {
+    const lastNNotes = subset.slice(-9, subset.length);
+    const res = getPotentialNotes(lastNNotes, scales, scaleWithMostMatches);
+  });
   describe("#getPotentialNotes", function () {
     it("Full C Major Scale should return c major scale", function () {
       expect(
@@ -83,5 +94,51 @@ describe("getPotentialNotes.js", function () {
           .possibleNotes
       ).to.have.same.members([8, 10, 0, 1, 3, 5, 7]);
     });
+    it("dissonant notes should yeild no possible notes", function () {
+      expect(
+        getPotentialNotes(
+          [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 2],
+          scales,
+          scaleWithMostMatches
+        ).possibleNotes
+      ).to.have.same.members([]);
+    });
+  });
+});
+
+describe("noteOnListener", function () {
+  it("Should not error", function () {
+    const e7 = {
+      note: {
+        name: "E",
+        octave: 5,
+        number: 64,
+      },
+    };
+    noteOnListener(e7, [60, 62, 65, 67, 69, 71]);
+  });
+  it("Should output the note played by the user when unsure which scale is being played", function () {
+    const dNoteEvent = {
+      note: {
+        name: "D",
+        octave: 5,
+        number: 62,
+      },
+    };
+    const noteToPlay13 = noteOnListener(dNoteEvent, [
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+    ]);
+    expect(noteToPlay13).to.equal(62);
   });
 });

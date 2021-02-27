@@ -1,8 +1,5 @@
 const { getPotentialNotes } = require("./getPotentialNotes");
-const {
-  generateMajorScales,
-  scaleLookup,
-} = require("./generateMajorScales");
+const { generateMajorScales, scaleLookup } = require("./generateMajorScales");
 
 const WebMidi = require("webmidi");
 
@@ -26,15 +23,29 @@ appendOptionsToChannelSelectElement("input");
 appendOptionsToChannelSelectElement("output");
 appendChannelSelectListeners();
 
-
-function appendOptionsToDeviceSelectElement(namesArray, selectEle, inputOrOutput) {
-  const addSelectedIfFirstOptionOrFoundInLocalStorage = (index, deviceName, inputOrOutput) => (index === 0 || deviceName === localStorage.getItem(`${inputOrOutput}Device`) ? " selected" : "");
+function appendOptionsToDeviceSelectElement(
+  namesArray,
+  selectEle,
+  inputOrOutput
+) {
+  const addSelectedIfFirstOptionOrFoundInLocalStorage = (
+    index,
+    deviceName,
+    inputOrOutput
+  ) =>
+    index === 0 || deviceName === localStorage.getItem(`${inputOrOutput}Device`)
+      ? " selected"
+      : "";
   namesArray.forEach((inputName, index) => {
     const optionEle =
       "<option value='" +
       index +
       "'" +
-      addSelectedIfFirstOptionOrFoundInLocalStorage(index, inputName, inputOrOutput) +
+      addSelectedIfFirstOptionOrFoundInLocalStorage(
+        index,
+        inputName,
+        inputOrOutput
+      ) +
       ">" +
       inputName +
       "</option>";
@@ -45,7 +56,7 @@ function appendOptionsToDeviceSelectElement(namesArray, selectEle, inputOrOutput
 let input;
 let output;
 
-function noteOnListener(e) {
+function noteOnListener(e, notesPlayed) {
   console.log(
     "Received 'noteon' message (" + e.note.name + e.note.octave + ").",
     e.note.number
@@ -84,50 +95,62 @@ function noteOnListener(e) {
   const detectedScaleElement = document.getElementById("detected-scale");
   detectedScaleElement.innerText = scaleOfChoice.name;
 
-  if (notesPlayed.length > 5) {
-    const randomNoteFromScaleWithMostMatches =
-      possibleNotes[Math.ceil(Math.random() * (possibleNotes.length - 1))];
+  let noteToPlay = e.note.number;
 
+  if (notesPlayed.length > 5) {
     const randomOctave = Math.ceil(Math.random() * 2);
 
-    // modulo 127 so note doesn't go above 127
-    const notePlusInterval = (e.note.number + interval) % 127;
-    let noteToPlay = scaleWithMostMatches.includes(notePlusInterval % 12)
-      ? notePlusInterval
-      : (notePlusInterval + 1) % 127;
-
     if (accompanimentTypePreference === "random_from_already_played") {
-      const randomNoteFromAlreadyPlayed = lastNNotes[Math.ceil(Math.random() * (lastNNotes.length - 1))];
+      const randomNoteFromAlreadyPlayed =
+        lastNNotes[Math.ceil(Math.random() * (lastNNotes.length - 1))];
       // play a random note from notes already played
       console.log(
         "random_from_already_played: will play note",
         scaleLookup[randomNoteFromAlreadyPlayed]
       );
 
-      output.playNote(randomNoteFromAlreadyPlayed + 48 + randomOctave * 12, outputChannel, {
+      noteToPlay = randomNoteFromAlreadyPlayed + 48 + randomOctave * 12;
+
+      output.playNote(noteToPlay, outputChannel, {
         time: WebMidi.time + 10,
         duration: 500,
         velocity: 0.75,
       });
     } else if (accompanimentTypePreference === "random_from_detected_scale") {
       // play a random note from scale with most matches from last n notes
+      const randomNoteFromScaleWithMostMatches =
+        possibleNotes[Math.ceil(Math.random() * (possibleNotes.length - 1))];
+
+      noteToPlay = possibleNotes.length
+        ? randomNoteFromScaleWithMostMatches + 48 + randomOctave * 12
+        : e.note.number;
       console.log(
         "random_from_detected_scale: will play note",
-        scaleLookup[randomNoteFromScaleWithMostMatches]
+        // scaleLookup[randomNoteFromScaleWithMostMatches]
+        scaleLookup[noteToPlay % 12]
       );
 
-      output.playNote(
-        randomNoteFromScaleWithMostMatches + 48 + randomOctave * 12,
-        outputChannel,
-        {
-          time: WebMidi.time + 30,
-          duration: 500,
-          velocity: 0.75,
-        }
-      );
+      output.playNote(noteToPlay, outputChannel, {
+        time: WebMidi.time + 30,
+        duration: 500,
+        velocity: 0.75,
+      });
     } else if (accompanimentTypePreference === "harmony") {
       // play harmony 3 or 4 semitones above
-      console.log("harmony: will play note", scaleLookup[noteToPlay % 12]);
+      // modulo 127 so note doesn't go above 127
+      const notePlusInterval = (e.note.number + interval) % 127;
+      const harmonyNoteToPlay = scaleWithMostMatches.includes(
+        notePlusInterval % 12
+      )
+        ? notePlusInterval
+        : (notePlusInterval + 1) % 127;
+
+      noteToPlay = harmonyNoteToPlay;
+
+      console.log(
+        "harmony: will play note",
+        scaleLookup[harmonyNoteToPlay % 12]
+      );
       output.playNote(noteToPlay, outputChannel, {
         time: WebMidi.time + 10,
         duration: 500,
@@ -135,6 +158,8 @@ function noteOnListener(e) {
       });
     }
   }
+
+  return noteToPlay;
 }
 
 WebMidi.enable(function (err) {
@@ -145,21 +170,25 @@ WebMidi.enable(function (err) {
 
     const inputSelectEle = document.getElementById("input-device-select");
     const inputNames = WebMidi.inputs.map((input) => input.name);
-    appendOptionsToDeviceSelectElement(inputNames, inputSelectEle, 'input');
+    appendOptionsToDeviceSelectElement(inputNames, inputSelectEle, "input");
     inputSelectEle.addEventListener("change", inputSelectChanged);
 
     const outputSelectEle = document.getElementById("output-device-select");
     const outputNames = WebMidi.outputs.map((input) => input.name);
-    appendOptionsToDeviceSelectElement(outputNames, outputSelectEle, 'output');
+    appendOptionsToDeviceSelectElement(outputNames, outputSelectEle, "output");
     outputSelectEle.addEventListener("change", outputSelectChanged);
 
     const selectedInputElementChosenIndex = inputSelectEle.value;
     const selectedOutputElementChosenIndex = outputSelectEle.value;
-    const locallyStoredInput = localStorage.getItem('inputDevice');
-    input = WebMidi.inputs.find(input => input.name === locallyStoredInput) || WebMidi.inputs[selectedInputElementChosenIndex];
-    output = WebMidi.outputs[selectedOutputElementChosenIndex];
+    const locallyStoredInput = localStorage.getItem("inputDevice");
+    input =
+      WebMidi.inputs.find((input) => input.name === locallyStoredInput) ||
+      WebMidi.inputs[selectedInputElementChosenIndex || 0];
+    output = WebMidi.outputs[selectedOutputElementChosenIndex || 0];
 
-    input.addListener("noteon", inputChannel, noteOnListener);
+    input.addListener("noteon", inputChannel, (e) =>
+      noteOnListener(e, notesPlayed)
+    );
   }
 });
 
@@ -238,12 +267,14 @@ function inputSelectChanged(evt) {
   input.removeListener("noteon", inputChannel, noteOnListener);
   input = WebMidi.inputs[evt.target.value];
   input.addListener("noteon", inputChannel, noteOnListener);
-  localStorage.setItem('inputDevice', input.name);
+  localStorage.setItem("inputDevice", input.name);
   console.log("input is now", input.name);
 }
 
 function outputSelectChanged(evt) {
   output = WebMidi.outputs[evt.target.value];
-  localStorage.setItem('outputDevice', output.name);
+  localStorage.setItem("outputDevice", output.name);
   console.log("output is now", output.name);
 }
+
+exports.noteOnListener = noteOnListener;

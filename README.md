@@ -15,3 +15,17 @@ hook up onscreen keyboard to midi input channel to allow playing of notes direct
 
 Next >>
 consider last n unique notes rather than last n notes
+
+
+//
+
+loopMIDI - creates virtual Port 1 and Port 2
+Pocket MIDI - has keyboard onscreen which can send notes to Port 1
+website choooses Port 1 as input and Port 2 as output
+
+Midi Ox - route Port1 to MS Wavetable Synth so that you can hear both of them.
+Open another software synth e.g. OB-Xd and route Port 2 to that.
+
+d and dsharp over and over
+then e
+caused empty array at guessNoteNumber

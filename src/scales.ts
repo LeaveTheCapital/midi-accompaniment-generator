@@ -1,16 +1,15 @@
-const CMajor = [0, 2, 4, 5, 7, 9, 11];
-const GMajor = [0, 2, 4, 6, 7, 9, 11];
-const FMajor = [0, 2, 4, 5, 7, 9, 10];
+import { intersection } from "lodash";
+import { IScale } from "./interfaces/IScale";
 
-const mapping = [0, 2, 4, 5, 7, 9, 11];
+const majorScaleMapping = [0, 2, 4, 5, 7, 9, 11];
 
-const scales = {};
+const scales: Record<string, IScale> = {};
 
-for (let i = 0; i < 12; i++) {
-  scales[i.toString()] = {
-    notes: mapping.map(note => (note + i) % 12),
+for (let noteOfTheScales = 0; noteOfTheScales < 12; noteOfTheScales++) {
+  scales[noteOfTheScales.toString()] = {
+    notes: majorScaleMapping.map((note) => (note + noteOfTheScales) % 12),
     numberOfMatches: 0,
-    confidence: 0
+    confidence: 0,
   };
 }
 
@@ -20,9 +19,7 @@ for (let i = 0; i < 20; i++) {
   const element = Math.ceil(Math.random() * 12) - 1;
   notes.push(element);
 }
-console.log(notes);
-
-function getPotentialNotes(notesPlayed) {
+function getPotentialNotes(notesPlayed: number[]) {
   let mostSoFar = 0;
 
   let countWithMostMatches = 0;
@@ -31,11 +28,12 @@ function getPotentialNotes(notesPlayed) {
 
   let scaleOfChoice = undefined;
 
+  // TODO scales should probably not be mutated
   for (const scale in scales) {
     if (scales.hasOwnProperty(scale)) {
       const currentScale = scales[scale];
       let nonMatches = 0;
-      const allMatches = notesPlayed.filter(note => {
+      const allMatches = notesPlayed.filter((note) => {
         const isMatch = -1 !== currentScale.notes.indexOf(note);
         if (!isMatch) {
           nonMatches++;
@@ -63,11 +61,11 @@ function getPotentialNotes(notesPlayed) {
     }
   }
 
-  let finalNotes = scaleOfChoice.notes;
+  let finalNotes = scaleOfChoice?.notes ?? [];
 
   if (countWithMostMatches > 1) {
-    const potentialNotes = _.intersection(
-      ...scalesToUse.map(scale => scales[scale].notes)
+    const potentialNotes = intersection(
+      ...scalesToUse.map((scale) => scales[scale].notes)
     );
     const potentialNotesSet = new Set(potentialNotes);
     finalNotes = Array.from(potentialNotesSet);
@@ -79,10 +77,10 @@ function getPotentialNotes(notesPlayed) {
     "scalesToUse",
     scalesToUse,
     "confidenceInEach",
-    scalesToUse.map(scale => scales[scale].confidence)
+    scalesToUse.map((scale) => scales[scale].confidence)
   );
   console.log("scaleOfChoice", scaleOfChoice);
-  console.log("scaleOfChoice confidence", scaleOfChoice.confidence);
+  console.log("scaleOfChoice confidence", scaleOfChoice?.confidence ?? 0);
 
   console.log("finalNotes", finalNotes);
 
@@ -92,4 +90,6 @@ function getPotentialNotes(notesPlayed) {
 const finalNotes = getPotentialNotes(notes);
 
 let p = document.getElementById("display");
-p.innerText = "display" + finalNotes;
+if (p) {
+  p.innerText = "display" + finalNotes;
+}

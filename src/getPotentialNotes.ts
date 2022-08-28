@@ -10,11 +10,11 @@ import { IScale } from "./interfaces/IScale";
 export function getPotentialNotes(notesPlayed: number[], scales: Record<string,IScale>, scaleWithMostMatches: number[]) {
   let mostSoFar = 0;
   let countWithMostMatches = 0;
-  let scalesToUse = [];
-  let scaleOfChoice = null;
-  for (const scale in scales) {
-    if (scales.hasOwnProperty(scale)) {
-      const currentScale = scales[scale];
+  let scalesToUse: string[] = [];
+  let scaleOfChoice: IScale | null = null;
+  for (const scaleName in scales) {
+    if (scales.hasOwnProperty(scaleName)) {
+      const currentScale = scales[scaleName];
       let nonMatches = 0;
       const allMatches = notesPlayed.filter((note) => {
         const isMatch = -1 !== currentScale.notes.indexOf(note);
@@ -32,14 +32,14 @@ export function getPotentialNotes(notesPlayed: number[], scales: Record<string,I
         countWithMostMatches = 1;
         mostSoFar = numberOfMatches;
         scaleOfChoice = currentScale;
-        scalesToUse.push(scale);
+        scalesToUse.push(scaleName);
         if (numberOfMatches === 7) {
           currentScale.numberOfMatches = numberOfMatches;
           break;
         }
       } else if (numberOfMatches === mostSoFar) {
         countWithMostMatches++;
-        scalesToUse.push(scale);
+        scalesToUse.push(scaleName);
       }
       currentScale.numberOfMatches = numberOfMatches;
     }

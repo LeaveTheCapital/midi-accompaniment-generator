@@ -13,7 +13,7 @@ for (let noteOfTheScales = 0; noteOfTheScales < 12; noteOfTheScales++) {
   };
 }
 
-const notes = [];
+const notes: number[] = [];
 
 for (let i = 0; i < 20; i++) {
   const element = Math.ceil(Math.random() * 12) - 1;
@@ -24,9 +24,9 @@ function getPotentialNotes(notesPlayed: number[]) {
 
   let countWithMostMatches = 0;
 
-  let scalesToUse = [];
+  let scalesToUse: string[] = [];
 
-  let scaleOfChoice = undefined;
+  let scaleOfChoice: IScale | null = null;
 
   // TODO scales should probably not be mutated
   for (const scale in scales) {

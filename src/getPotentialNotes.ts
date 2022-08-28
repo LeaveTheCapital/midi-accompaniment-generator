@@ -1,12 +1,13 @@
-const { intersection } = require("lodash");
+import { intersection } from "lodash";
+import { IScale } from "./interfaces/IScale";
 
 /**
- * getPotentialNotes calculates which scale(s) are being played with highest likelihood, returns the first scale and the potential notes. If more than one scale, will get only potential notes which are in ALL of those scales to avoid playing notes out of key.
+ * getPotentialNotes calculates which scale(s) are being played with highest likelihood, returns the first scale and the potential notes. If more than one scale is a potential match, will get only potential notes which are in ALL of those scales to avoid playing notes out of key.
  * @param  {Array} notesPlayed recently played notes
  * @param  {scales} scales object containing all major scale information
  * @return {Object}      possibleNotes - array of all notes which can be played as accompaniment, scaleOfChoice - most likely scale being played
  */
-function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
+export function getPotentialNotes(notesPlayed: number[], scales: Record<string,IScale>, scaleWithMostMatches: number[]) {
   let mostSoFar = 0;
   let countWithMostMatches = 0;
   let scalesToUse = [];
@@ -43,18 +44,15 @@ function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
       currentScale.numberOfMatches = numberOfMatches;
     }
   }
-  let finalNotes = scaleOfChoice.notes;
-  scaleWithMostMatches = scaleOfChoice.notes;
+  let finalNotes = scaleOfChoice?.notes || []; // what is expected default behaviour
+  scaleWithMostMatches = scaleOfChoice?.notes ?? [];
   if (countWithMostMatches > 1) {
     const potentialNotes = intersection(
       ...scalesToUse.map((scale) => scales[scale].notes)
     );
-    console.log({ potentialNotes });
-    console.log({ scalesToUse });
     const potentialNotesSet = new Set(potentialNotes);
     finalNotes = Array.from(potentialNotesSet);
   }
 
   return { possibleNotes: finalNotes, scaleOfChoice: scaleOfChoice };
 }
-exports.getPotentialNotes = getPotentialNotes;

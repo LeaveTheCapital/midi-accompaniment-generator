@@ -222,7 +222,7 @@ WebMidi.enable({
         WebMidi.inputs[selectedInputElementChosenIndex || 0];
       output = WebMidi.outputs[selectedOutputElementChosenIndex || 0];
 
-      input.addListener(
+      input?.addListener(
         "noteon",
         (e: NoteMessageEvent) =>
           noteOnListener(

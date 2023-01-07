@@ -248,7 +248,7 @@ webmidi_1.WebMidi.enable({
                 webmidi_1.WebMidi.inputs.find((input) => input.name === locallyStoredInput) ||
                     webmidi_1.WebMidi.inputs[selectedInputElementChosenIndex || 0];
             output = webmidi_1.WebMidi.outputs[selectedOutputElementChosenIndex || 0];
-            input.addListener("noteon", (e) => noteOnListener(e
+            input === null || input === void 0 ? void 0 : input.addListener("noteon", (e) => noteOnListener(e
             // , notesPlayed
             ), { channels: inputChannel });
         }

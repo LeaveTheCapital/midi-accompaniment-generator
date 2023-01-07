@@ -2,7 +2,7 @@
   "name": "midi-accompaniment-generator",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/midi.ts",
   "dependencies": {
     "lodash": "4.17.21",
     "webmidi": "3.0.20"
@@ -22,7 +22,8 @@
   },
   "scripts": {
     "test": "jest --watchAll",
-    "browserify": "browserify dist/midi.js -o website/bundle.js"
+    "browserify": "tsc && browserify dist/midi.js -o website/bundle.js",
+    "compile": "tsc"
   },
   "keywords": [],
   "author": "",

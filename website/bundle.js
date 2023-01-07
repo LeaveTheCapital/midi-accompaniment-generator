@@ -63,9 +63,9 @@ function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
     let countWithMostMatches = 0;
     let scalesToUse = [];
     let scaleOfChoice = null;
-    for (const scale in scales) {
-        if (scales.hasOwnProperty(scale)) {
-            const currentScale = scales[scale];
+    for (const scaleName in scales) {
+        if (scales.hasOwnProperty(scaleName)) {
+            const currentScale = scales[scaleName];
             let nonMatches = 0;
             const allMatches = notesPlayed.filter((note) => {
                 const isMatch = -1 !== currentScale.notes.indexOf(note);
@@ -83,7 +83,7 @@ function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
                 countWithMostMatches = 1;
                 mostSoFar = numberOfMatches;
                 scaleOfChoice = currentScale;
-                scalesToUse.push(scale);
+                scalesToUse.push(scaleName);
                 if (numberOfMatches === 7) {
                     currentScale.numberOfMatches = numberOfMatches;
                     break;
@@ -91,7 +91,7 @@ function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
             }
             else if (numberOfMatches === mostSoFar) {
                 countWithMostMatches++;
-                scalesToUse.push(scale);
+                scalesToUse.push(scaleName);
             }
             currentScale.numberOfMatches = numberOfMatches;
         }

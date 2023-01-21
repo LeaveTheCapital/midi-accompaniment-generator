@@ -1,338 +1,4 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateMajorScales = exports.scaleLookup = void 0;
-exports.scaleLookup = {
-    "0": "C",
-    "1": "C#",
-    "2": "D",
-    "3": "D#",
-    "4": "E",
-    "5": "F",
-    "6": "F#",
-    "7": "G",
-    "8": "G#",
-    "9": "A",
-    "10": "A#",
-    "11": "B",
-};
-function generateMajorScales() {
-    const mapping = [0, 2, 4, 5, 7, 9, 11];
-    const scaleLookup = {
-        "0": "C",
-        "1": "C#",
-        "2": "D",
-        "3": "D#",
-        "4": "E",
-        "5": "F",
-        "6": "F#",
-        "7": "G",
-        "8": "G#",
-        "9": "A",
-        "10": "A#",
-        "11": "B",
-    };
-    const scales = {};
-    // exports.scales = scales;
-    for (let i = 0; i < 12; i++) {
-        scales[i.toString()] = {
-            notes: mapping.map((note) => (note + i) % 12),
-            numberOfMatches: 0,
-            confidence: 0,
-            name: scaleLookup[i.toString()],
-        };
-    }
-    return scales;
-}
-exports.generateMajorScales = generateMajorScales;
-
-},{}],2:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPotentialNotes = void 0;
-const lodash_1 = require("lodash");
-/**
- * getPotentialNotes calculates which scale(s) are being played with highest likelihood, returns the first scale and the potential notes. If more than one scale is a potential match, will get only potential notes which are in ALL of those scales to avoid playing notes out of key.
- * @param  {Array} notesPlayed recently played notes
- * @param  {scales} scales object containing all major scale information
- * @return {Object}      possibleNotes - array of all notes which can be played as accompaniment, scaleOfChoice - most likely scale being played
- */
-function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
-    var _a;
-    let mostSoFar = 0;
-    let countWithMostMatches = 0;
-    let scalesToUse = [];
-    let scaleOfChoice = null;
-    for (const scaleName in scales) {
-        if (scales.hasOwnProperty(scaleName)) {
-            const currentScale = scales[scaleName];
-            let nonMatches = 0;
-            const allMatches = notesPlayed.filter((note) => {
-                const isMatch = -1 !== currentScale.notes.indexOf(note);
-                if (!isMatch) {
-                    nonMatches++;
-                }
-                return isMatch;
-            });
-            const uniqueMatches = new Set(allMatches);
-            const numberOfMatches = uniqueMatches.size;
-            currentScale.confidence =
-                (notesPlayed.length - nonMatches) / notesPlayed.length;
-            if (numberOfMatches > mostSoFar) {
-                scalesToUse = [];
-                countWithMostMatches = 1;
-                mostSoFar = numberOfMatches;
-                scaleOfChoice = currentScale;
-                scalesToUse.push(scaleName);
-                if (numberOfMatches === 7) {
-                    currentScale.numberOfMatches = numberOfMatches;
-                    break;
-                }
-            }
-            else if (numberOfMatches === mostSoFar) {
-                countWithMostMatches++;
-                scalesToUse.push(scaleName);
-            }
-            currentScale.numberOfMatches = numberOfMatches;
-        }
-    }
-    let finalNotes = (scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.notes) || []; // what is expected default behaviour
-    scaleWithMostMatches = (_a = scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.notes) !== null && _a !== void 0 ? _a : [];
-    if (countWithMostMatches > 1) {
-        const potentialNotes = (0, lodash_1.intersection)(...scalesToUse.map((scale) => scales[scale].notes));
-        const potentialNotesSet = new Set(potentialNotes);
-        finalNotes = Array.from(potentialNotesSet);
-    }
-    return { possibleNotes: finalNotes, scaleOfChoice: scaleOfChoice };
-}
-exports.getPotentialNotes = getPotentialNotes;
-
-},{"lodash":4}],3:[function(require,module,exports){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.noteOnListener = void 0;
-const getPotentialNotes_1 = require("./getPotentialNotes");
-const generateMajorScales_1 = require("./generateMajorScales");
-// const WebMidi = require("webmidi");
-const webmidi_1 = require("webmidi");
-// Generate all major scales
-const scales = (0, generateMajorScales_1.generateMajorScales)();
-window.notesPlayed = [];
-let scaleWithMostMatches = [];
-const numberOfNotesToConsider = 9;
-let inputChannel = 1;
-let outputChannel = 1;
-let accompanimentTypePreference = "random_from_detected_scale";
-const interval = 3;
-displayNumberOfNotes();
-attachAccompanimentTypeHandlers();
-appendOptionsToChannelSelectElement("input");
-appendOptionsToChannelSelectElement("output");
-appendChannelSelectListeners();
-function appendOptionsToDeviceSelectElement(namesArray, selectEle, inputOrOutput) {
-    const addSelectedIfFirstOptionOrFoundInLocalStorage = (index, deviceName, inputOrOutput) => index === 0 || deviceName === localStorage.getItem(`${inputOrOutput}Device`)
-        ? " selected"
-        : "";
-    namesArray.forEach((inputName, index) => {
-        const optionEle = "<option value='" +
-            index +
-            "'" +
-            addSelectedIfFirstOptionOrFoundInLocalStorage(index, inputName, inputOrOutput) +
-            ">" +
-            inputName +
-            "</option>";
-        selectEle.innerHTML += optionEle;
-    });
-}
-let input;
-let output;
-function noteOnListener(e) {
-    var _a, _b;
-    console.log("Received 'noteon' message (" + e.note.name + e.note.octave + ").", e.note.number);
-    const pureNoteNumber = e.note.number % 12;
-    const pureNoteNumberAsString = pureNoteNumber.toString();
-    const pureNoteName = generateMajorScales_1.scaleLookup[pureNoteNumberAsString];
-    const matchingKeyFromKeyboardEle = document.getElementsByClassName(pureNoteName)[0];
-    const activeKeyboardElements = Array.from(document.getElementsByClassName("active"));
-    if (activeKeyboardElements.length > 0) {
-        activeKeyboardElements.forEach(function (el) {
-            el.classList.remove("active");
-        });
-    }
-    if (matchingKeyFromKeyboardEle) {
-        matchingKeyFromKeyboardEle.className += " active";
-    }
-    window.notesPlayed.push(pureNoteNumber);
-    const lastNNotes = window.notesPlayed.slice(-numberOfNotesToConsider, window.notesPlayed.length);
-    const { possibleNotes, scaleOfChoice } = (0, getPotentialNotes_1.getPotentialNotes)(lastNNotes, scales, scaleWithMostMatches);
-    scaleWithMostMatches = (_a = scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.notes) !== null && _a !== void 0 ? _a : [];
-    const detectedScaleElement = document.getElementById("detected-scale");
-    if (detectedScaleElement !== null) {
-        detectedScaleElement.innerText = (_b = scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.name) !== null && _b !== void 0 ? _b : '';
-    }
-    let noteToPlay = e.note.number;
-    if (window.notesPlayed.length > 5) {
-        const randomOctave = Math.ceil(Math.random() * 2);
-        if (accompanimentTypePreference === "random_from_already_played") {
-            const randomNoteFromAlreadyPlayed = lastNNotes[Math.ceil(Math.random() * (lastNNotes.length - 1))];
-            // play a random note from notes already played
-            const randomNoteFromAlreadyPlayedAsString = randomNoteFromAlreadyPlayed.toString();
-            console.log("random_from_already_played: will play note", generateMajorScales_1.scaleLookup[randomNoteFromAlreadyPlayedAsString]);
-            noteToPlay = randomNoteFromAlreadyPlayed + 48 + randomOctave * 12;
-            output.playNote(noteToPlay, {
-                channels: outputChannel,
-                time: webmidi_1.WebMidi.time + 10,
-                duration: 500,
-                attack: 0.75, // changed velocity to attack
-            });
-        }
-        else if (accompanimentTypePreference === "random_from_detected_scale") {
-            // play a random note from scale with most matches from last n notes
-            const randomNoteFromScaleWithMostMatches = possibleNotes[Math.ceil(Math.random() * (possibleNotes.length - 1))];
-            noteToPlay = possibleNotes.length
-                ? randomNoteFromScaleWithMostMatches + 48 + randomOctave * 12
-                : e.note.number;
-            const noteToPlayPureNoteNumber = noteToPlay % 12;
-            const noteToPlayPureNoteNumberAsString = noteToPlayPureNoteNumber.toString();
-            console.log("random_from_detected_scale: will play note", 
-            // scaleLookup[randomNoteFromScaleWithMostMatches]
-            generateMajorScales_1.scaleLookup[noteToPlayPureNoteNumberAsString]);
-            output.playNote(noteToPlay, {
-                channels: outputChannel,
-                time: webmidi_1.WebMidi.time + 30,
-                duration: 500,
-                attack: 0.75, // changed velocity to attack
-            });
-        }
-        else if (accompanimentTypePreference === "harmony") {
-            // play harmony 3 or 4 semitones above
-            // modulo 127 so note doesn't go above 127
-            const notePlusInterval = (e.note.number + interval) % 127;
-            const harmonyNoteToPlay = scaleWithMostMatches.includes(notePlusInterval % 12)
-                ? notePlusInterval
-                : (notePlusInterval + 1) % 127;
-            noteToPlay = harmonyNoteToPlay;
-            const pureHarmonyNoteToPlayAsString = (harmonyNoteToPlay % 12).toString();
-            console.log("harmony: will play note", generateMajorScales_1.scaleLookup[pureHarmonyNoteToPlayAsString]);
-            output.playNote(noteToPlay, {
-                channels: outputChannel,
-                time: webmidi_1.WebMidi.time + 10,
-                duration: 500,
-                attack: 0.75 // changed velocity to attack
-                // velocity: 0.75,
-            });
-        }
-    }
-    // return noteToPlay;
-}
-exports.noteOnListener = noteOnListener;
-webmidi_1.WebMidi.enable({
-    callback: function (err) {
-        if (err) {
-            console.log("WebMidi could not be enabled.", err);
-        }
-        else {
-            console.log("WebMidi enabled!");
-            const inputSelectEle = document.getElementById("input-device-select");
-            const inputNames = webmidi_1.WebMidi.inputs.map((input) => input.name);
-            appendOptionsToDeviceSelectElement(inputNames, inputSelectEle, "input");
-            inputSelectEle === null || inputSelectEle === void 0 ? void 0 : inputSelectEle.addEventListener("change", inputSelectChanged);
-            const outputSelectEle = document.getElementById("output-device-select");
-            const outputNames = webmidi_1.WebMidi.outputs.map((input) => input.name);
-            appendOptionsToDeviceSelectElement(outputNames, outputSelectEle, "output");
-            outputSelectEle === null || outputSelectEle === void 0 ? void 0 : outputSelectEle.addEventListener("change", outputSelectChanged);
-            const selectedInputElementChosenIndex = parseInt(inputSelectEle === null || inputSelectEle === void 0 ? void 0 : inputSelectEle.value);
-            const selectedOutputElementChosenIndex = parseInt(outputSelectEle === null || outputSelectEle === void 0 ? void 0 : outputSelectEle.value);
-            const locallyStoredInput = localStorage.getItem("inputDevice");
-            input =
-                webmidi_1.WebMidi.inputs.find((input) => input.name === locallyStoredInput) ||
-                    webmidi_1.WebMidi.inputs[selectedInputElementChosenIndex || 0];
-            output = webmidi_1.WebMidi.outputs[selectedOutputElementChosenIndex || 0];
-            input === null || input === void 0 ? void 0 : input.addListener("noteon", (e) => noteOnListener(e
-            // , notesPlayed
-            ), { channels: inputChannel });
-        }
-    },
-});
-let startButton = document.getElementById("start");
-startButton
-    ? (startButton.onclick = function () {
-        console.log(webmidi_1.WebMidi.inputs);
-        console.log(webmidi_1.WebMidi.outputs);
-        // let output = WebMidi.getOutputByName("EIE");
-        let output = webmidi_1.WebMidi.outputs[0];
-        for (let i = 1; i < 9; i++) {
-            output.playNote(`C${i}`, { channels: 1, time: webmidi_1.WebMidi.time * i });
-            output.playNote(`F${i}`, { channels: 1, time: webmidi_1.WebMidi.time * i + 150 });
-            output.playNote(`A${i}`, { channels: 1, time: webmidi_1.WebMidi.time * i + 225 });
-            console.log(webmidi_1.WebMidi.time);
-            // try and play notes with AudioContext oscillator
-            // let context = new AudioContext();
-            // let oscillator = context.createOscillator();
-            // console.log(oscillator);
-            // oscillator.frequency.value = 200;
-            // oscillator.connect(context.destination);
-            // oscillator.start(0);
-        }
-        /* output.playNote("D6", 1, {time: 600});
-    output.playNote(100, 1, {time: 800});
-    output.playNote("G2", 1, {time: 100}); */
-        /* .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
-    .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
-    .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
-    .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
-    .stopNote("G5", 1, {time: 1000});    // After 1.2 s. */
-    })
-    : null;
-function displayNumberOfNotes() {
-    let ele = document.getElementById("numberOfNotes");
-    if (ele) {
-        ele.innerHTML = `Considering last <span class="number-of-notes">${numberOfNotesToConsider}</span> notes`;
-    }
-}
-function attachAccompanimentTypeHandlers() {
-    const radios = document.getElementsByName("accompaniment-type");
-    for (let i = 0; i < radios.length; i++) {
-        radios[i].onclick = function () {
-            accompanimentTypePreference = radios[i].value;
-            console.log("preference set to ", accompanimentTypePreference);
-        };
-    }
-}
-function appendOptionsToChannelSelectElement(inputOrOutput) {
-    const ele = document.getElementById(`${inputOrOutput}-channel-select`);
-    for (let channel = 1; channel <= 16; channel++) {
-        const optionEle = "<option value='" + channel + "'>" + channel + "</option>";
-        if (ele) {
-            ele.innerHTML += optionEle;
-        }
-    }
-}
-function appendChannelSelectListeners() {
-    const inputChannelEle = document.getElementById("input-channel-select");
-    const outputChannelEle = document.getElementById("output-channel-select");
-    inputChannelEle
-        ? inputChannelEle.addEventListener("change", (evt) => (inputChannel = parseInt(evt.target.value)))
-        : null;
-    outputChannelEle
-        ? outputChannelEle.addEventListener("change", (evt) => (outputChannel = parseInt(evt.target.value)))
-        : null;
-}
-function inputSelectChanged(evt) {
-    input.removeListener("noteon", noteOnListener, { channels: inputChannel });
-    input = webmidi_1.WebMidi.inputs[parseInt(evt.target.value)];
-    input.addListener("noteon", noteOnListener, { channels: inputChannel });
-    localStorage.setItem("inputDevice", input.name);
-    console.log("input is now", input.name);
-}
-function outputSelectChanged(evt) {
-    output = webmidi_1.WebMidi.outputs[parseInt(evt.target.value)];
-    localStorage.setItem("outputDevice", output.name);
-    console.log("output is now", output.name);
-}
-exports.noteOnListener = noteOnListener;
-
-},{"./generateMajorScales":1,"./getPotentialNotes":2,"webmidi":6}],4:[function(require,module,exports){
 (function (global){(function (){
 /**
  * @license
@@ -17545,7 +17211,7 @@ exports.noteOnListener = noteOnListener;
 }.call(this));
 
 }).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],5:[function(require,module,exports){
+},{}],2:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 
@@ -17731,7 +17397,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],6:[function(require,module,exports){
+},{}],3:[function(require,module,exports){
 (function (process,global){(function (){
 /**
  * WEBMIDI.js v3.0.25
@@ -18131,4 +17797,338 @@ static toNoteNumber(e,t=0){if(t=null==t?0:parseInt(t),isNaN(t))throw new RangeEr
 
 
 }).call(this)}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":5}]},{},[3]);
+},{"_process":2}],4:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.generateMajorScales = exports.scaleLookup = void 0;
+exports.scaleLookup = {
+    "0": "C",
+    "1": "C#",
+    "2": "D",
+    "3": "D#",
+    "4": "E",
+    "5": "F",
+    "6": "F#",
+    "7": "G",
+    "8": "G#",
+    "9": "A",
+    "10": "A#",
+    "11": "B",
+};
+function generateMajorScales() {
+    const mapping = [0, 2, 4, 5, 7, 9, 11];
+    const scaleLookup = {
+        "0": "C",
+        "1": "C#",
+        "2": "D",
+        "3": "D#",
+        "4": "E",
+        "5": "F",
+        "6": "F#",
+        "7": "G",
+        "8": "G#",
+        "9": "A",
+        "10": "A#",
+        "11": "B",
+    };
+    const scales = {};
+    // exports.scales = scales;
+    for (let i = 0; i < 12; i++) {
+        scales[i.toString()] = {
+            notes: mapping.map((note) => (note + i) % 12),
+            numberOfMatches: 0,
+            confidence: 0,
+            name: scaleLookup[i.toString()],
+        };
+    }
+    return scales;
+}
+exports.generateMajorScales = generateMajorScales;
+
+},{}],5:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getPotentialNotes = void 0;
+const lodash_1 = require("lodash");
+/**
+ * getPotentialNotes calculates which scale(s) are being played with highest likelihood, returns the first scale and the potential notes. If more than one scale is a potential match, will get only potential notes which are in ALL of those scales to avoid playing notes out of key.
+ * @param  {Array} notesPlayed recently played notes
+ * @param  {scales} scales object containing all major scale information
+ * @return {Object}      possibleNotes - array of all notes which can be played as accompaniment, scaleOfChoice - most likely scale being played
+ */
+function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
+    var _a;
+    let mostSoFar = 0;
+    let countWithMostMatches = 0;
+    let scalesToUse = [];
+    let scaleOfChoice = null;
+    for (const scaleName in scales) {
+        if (scales.hasOwnProperty(scaleName)) {
+            const currentScale = scales[scaleName];
+            let nonMatches = 0;
+            const allMatches = notesPlayed.filter((note) => {
+                const isMatch = -1 !== currentScale.notes.indexOf(note);
+                if (!isMatch) {
+                    nonMatches++;
+                }
+                return isMatch;
+            });
+            const uniqueMatches = new Set(allMatches);
+            const numberOfMatches = uniqueMatches.size;
+            currentScale.confidence =
+                (notesPlayed.length - nonMatches) / notesPlayed.length;
+            if (numberOfMatches > mostSoFar) {
+                scalesToUse = [];
+                countWithMostMatches = 1;
+                mostSoFar = numberOfMatches;
+                scaleOfChoice = currentScale;
+                scalesToUse.push(scaleName);
+                if (numberOfMatches === 7) {
+                    currentScale.numberOfMatches = numberOfMatches;
+                    break;
+                }
+            }
+            else if (numberOfMatches === mostSoFar) {
+                countWithMostMatches++;
+                scalesToUse.push(scaleName);
+            }
+            currentScale.numberOfMatches = numberOfMatches;
+        }
+    }
+    let finalNotes = (scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.notes) || []; // what is expected default behaviour
+    scaleWithMostMatches = (_a = scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.notes) !== null && _a !== void 0 ? _a : [];
+    if (countWithMostMatches > 1) {
+        const potentialNotes = (0, lodash_1.intersection)(...scalesToUse.map((scale) => scales[scale].notes));
+        const potentialNotesSet = new Set(potentialNotes);
+        finalNotes = Array.from(potentialNotesSet);
+    }
+    return { possibleNotes: finalNotes, scaleOfChoice: scaleOfChoice };
+}
+exports.getPotentialNotes = getPotentialNotes;
+
+},{"lodash":1}],6:[function(require,module,exports){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.noteOnListener = void 0;
+const getPotentialNotes_1 = require("./getPotentialNotes");
+const generateMajorScales_1 = require("./generateMajorScales");
+// const WebMidi = require("webmidi");
+const webmidi_1 = require("webmidi");
+// Generate all major scales
+const scales = (0, generateMajorScales_1.generateMajorScales)();
+window.notesPlayed = [];
+let scaleWithMostMatches = [];
+const numberOfNotesToConsider = 9;
+let inputChannel = 1;
+let outputChannel = 1;
+let accompanimentTypePreference = "random_from_detected_scale";
+const interval = 3;
+displayNumberOfNotes();
+attachAccompanimentTypeHandlers();
+appendOptionsToChannelSelectElement("input");
+appendOptionsToChannelSelectElement("output");
+appendChannelSelectListeners();
+function appendOptionsToDeviceSelectElement(namesArray, selectEle, inputOrOutput) {
+    const addSelectedIfFirstOptionOrFoundInLocalStorage = (index, deviceName, inputOrOutput) => index === 0 || deviceName === localStorage.getItem(`${inputOrOutput}Device`)
+        ? " selected"
+        : "";
+    namesArray.forEach((inputName, index) => {
+        const optionEle = "<option value='" +
+            index +
+            "'" +
+            addSelectedIfFirstOptionOrFoundInLocalStorage(index, inputName, inputOrOutput) +
+            ">" +
+            inputName +
+            "</option>";
+        selectEle.innerHTML += optionEle;
+    });
+}
+let input;
+let output;
+function noteOnListener(e) {
+    var _a, _b;
+    console.log("Received 'noteon' message (" + e.note.name + e.note.octave + ").", e.note.number);
+    const pureNoteNumber = e.note.number % 12;
+    const pureNoteNumberAsString = pureNoteNumber.toString();
+    const pureNoteName = generateMajorScales_1.scaleLookup[pureNoteNumberAsString];
+    const matchingKeyFromKeyboardEle = document.getElementsByClassName(pureNoteName)[0];
+    const activeKeyboardElements = Array.from(document.getElementsByClassName("active"));
+    if (activeKeyboardElements.length > 0) {
+        activeKeyboardElements.forEach(function (el) {
+            el.classList.remove("active");
+        });
+    }
+    if (matchingKeyFromKeyboardEle) {
+        matchingKeyFromKeyboardEle.className += " active";
+    }
+    window.notesPlayed.push(pureNoteNumber);
+    const lastNNotes = window.notesPlayed.slice(-numberOfNotesToConsider, window.notesPlayed.length);
+    const { possibleNotes, scaleOfChoice } = (0, getPotentialNotes_1.getPotentialNotes)(lastNNotes, scales, scaleWithMostMatches);
+    scaleWithMostMatches = (_a = scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.notes) !== null && _a !== void 0 ? _a : [];
+    const detectedScaleElement = document.getElementById("detected-scale");
+    if (detectedScaleElement !== null) {
+        detectedScaleElement.innerText = (_b = scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.name) !== null && _b !== void 0 ? _b : '';
+    }
+    let noteToPlay = e.note.number;
+    if (window.notesPlayed.length > 5) {
+        const randomOctave = Math.ceil(Math.random() * 2);
+        if (accompanimentTypePreference === "random_from_already_played") {
+            const randomNoteFromAlreadyPlayed = lastNNotes[Math.ceil(Math.random() * (lastNNotes.length - 1))];
+            // play a random note from notes already played
+            const randomNoteFromAlreadyPlayedAsString = randomNoteFromAlreadyPlayed.toString();
+            console.log("random_from_already_played: will play note", generateMajorScales_1.scaleLookup[randomNoteFromAlreadyPlayedAsString]);
+            noteToPlay = randomNoteFromAlreadyPlayed + 48 + randomOctave * 12;
+            output.playNote(noteToPlay, {
+                channels: outputChannel,
+                time: webmidi_1.WebMidi.time + 10,
+                duration: 500,
+                attack: 0.75, // changed velocity to attack
+            });
+        }
+        else if (accompanimentTypePreference === "random_from_detected_scale") {
+            // play a random note from scale with most matches from last n notes
+            const randomNoteFromScaleWithMostMatches = possibleNotes[Math.ceil(Math.random() * (possibleNotes.length - 1))];
+            noteToPlay = possibleNotes.length
+                ? randomNoteFromScaleWithMostMatches + 48 + randomOctave * 12
+                : e.note.number;
+            const noteToPlayPureNoteNumber = noteToPlay % 12;
+            const noteToPlayPureNoteNumberAsString = noteToPlayPureNoteNumber.toString();
+            console.log("random_from_detected_scale: will play note", 
+            // scaleLookup[randomNoteFromScaleWithMostMatches]
+            generateMajorScales_1.scaleLookup[noteToPlayPureNoteNumberAsString]);
+            output.playNote(noteToPlay, {
+                channels: outputChannel,
+                time: webmidi_1.WebMidi.time + 30,
+                duration: 500,
+                attack: 0.75, // changed velocity to attack
+            });
+        }
+        else if (accompanimentTypePreference === "harmony") {
+            // play harmony 3 or 4 semitones above
+            // modulo 127 so note doesn't go above 127
+            const notePlusInterval = (e.note.number + interval) % 127;
+            const harmonyNoteToPlay = scaleWithMostMatches.includes(notePlusInterval % 12)
+                ? notePlusInterval
+                : (notePlusInterval + 1) % 127;
+            noteToPlay = harmonyNoteToPlay;
+            const pureHarmonyNoteToPlayAsString = (harmonyNoteToPlay % 12).toString();
+            console.log("harmony: will play note", generateMajorScales_1.scaleLookup[pureHarmonyNoteToPlayAsString]);
+            output.playNote(noteToPlay, {
+                channels: outputChannel,
+                time: webmidi_1.WebMidi.time + 10,
+                duration: 500,
+                attack: 0.75 // changed velocity to attack
+                // velocity: 0.75,
+            });
+        }
+    }
+    // return noteToPlay;
+}
+exports.noteOnListener = noteOnListener;
+webmidi_1.WebMidi.enable({
+    callback: function (err) {
+        if (err) {
+            console.log("WebMidi could not be enabled.", err);
+        }
+        else {
+            console.log("WebMidi enabled!111");
+            const inputSelectEle = document.getElementById("input-device-select");
+            const inputNames = webmidi_1.WebMidi.inputs.map((input) => input.name);
+            appendOptionsToDeviceSelectElement(inputNames, inputSelectEle, "input");
+            inputSelectEle === null || inputSelectEle === void 0 ? void 0 : inputSelectEle.addEventListener("change", inputSelectChanged);
+            const outputSelectEle = document.getElementById("output-device-select");
+            const outputNames = webmidi_1.WebMidi.outputs.map((input) => input.name);
+            appendOptionsToDeviceSelectElement(outputNames, outputSelectEle, "output");
+            outputSelectEle === null || outputSelectEle === void 0 ? void 0 : outputSelectEle.addEventListener("change", outputSelectChanged);
+            const selectedInputElementChosenIndex = parseInt(inputSelectEle === null || inputSelectEle === void 0 ? void 0 : inputSelectEle.value);
+            const selectedOutputElementChosenIndex = parseInt(outputSelectEle === null || outputSelectEle === void 0 ? void 0 : outputSelectEle.value);
+            const locallyStoredInput = localStorage.getItem("inputDevice");
+            input =
+                webmidi_1.WebMidi.inputs.find((input) => input.name === locallyStoredInput) ||
+                    webmidi_1.WebMidi.inputs[selectedInputElementChosenIndex || 0];
+            output = webmidi_1.WebMidi.outputs[selectedOutputElementChosenIndex || 0];
+            input === null || input === void 0 ? void 0 : input.addListener("noteon", (e) => noteOnListener(e
+            // , notesPlayed
+            ), { channels: inputChannel });
+        }
+    },
+});
+let startButton = document.getElementById("start");
+startButton
+    ? (startButton.onclick = function () {
+        console.log(webmidi_1.WebMidi.inputs);
+        console.log(webmidi_1.WebMidi.outputs);
+        // let output = WebMidi.getOutputByName("EIE");
+        let output = webmidi_1.WebMidi.outputs[0];
+        for (let i = 1; i < 9; i++) {
+            output.playNote(`C${i}`, { channels: 1, time: webmidi_1.WebMidi.time * i });
+            output.playNote(`F${i}`, { channels: 1, time: webmidi_1.WebMidi.time * i + 150 });
+            output.playNote(`A${i}`, { channels: 1, time: webmidi_1.WebMidi.time * i + 225 });
+            console.log(webmidi_1.WebMidi.time);
+            // try and play notes with AudioContext oscillator
+            // let context = new AudioContext();
+            // let oscillator = context.createOscillator();
+            // console.log(oscillator);
+            // oscillator.frequency.value = 200;
+            // oscillator.connect(context.destination);
+            // oscillator.start(0);
+        }
+        /* output.playNote("D6", 1, {time: 600});
+    output.playNote(100, 1, {time: 800});
+    output.playNote("G2", 1, {time: 100}); */
+        /* .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
+    .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
+    .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
+    .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
+    .stopNote("G5", 1, {time: 1000});    // After 1.2 s. */
+    })
+    : null;
+function displayNumberOfNotes() {
+    let ele = document.getElementById("numberOfNotes");
+    if (ele) {
+        ele.innerHTML = `Considering last <span class="number-of-notes">${numberOfNotesToConsider}</span> notes`;
+    }
+}
+function attachAccompanimentTypeHandlers() {
+    const radios = document.getElementsByName("accompaniment-type");
+    for (let i = 0; i < radios.length; i++) {
+        radios[i].onclick = function () {
+            accompanimentTypePreference = radios[i].value;
+            console.log("preference set to ", accompanimentTypePreference);
+        };
+    }
+}
+function appendOptionsToChannelSelectElement(inputOrOutput) {
+    const ele = document.getElementById(`${inputOrOutput}-channel-select`);
+    for (let channel = 1; channel <= 16; channel++) {
+        const optionEle = "<option value='" + channel + "'>" + channel + "</option>";
+        if (ele) {
+            ele.innerHTML += optionEle;
+        }
+    }
+}
+function appendChannelSelectListeners() {
+    const inputChannelEle = document.getElementById("input-channel-select");
+    const outputChannelEle = document.getElementById("output-channel-select");
+    inputChannelEle
+        ? inputChannelEle.addEventListener("change", (evt) => (inputChannel = parseInt(evt.target.value)))
+        : null;
+    outputChannelEle
+        ? outputChannelEle.addEventListener("change", (evt) => (outputChannel = parseInt(evt.target.value)))
+        : null;
+}
+function inputSelectChanged(evt) {
+    input.removeListener("noteon", noteOnListener, { channels: inputChannel });
+    input = webmidi_1.WebMidi.inputs[parseInt(evt.target.value)];
+    input.addListener("noteon", noteOnListener, { channels: inputChannel });
+    localStorage.setItem("inputDevice", input.name);
+    console.log("input is now", input.name);
+}
+function outputSelectChanged(evt) {
+    output = webmidi_1.WebMidi.outputs[parseInt(evt.target.value)];
+    localStorage.setItem("outputDevice", output.name);
+    console.log("output is now", output.name);
+}
+exports.noteOnListener = noteOnListener;
+
+},{"./generateMajorScales":4,"./getPotentialNotes":5,"webmidi":3}]},{},[6]);

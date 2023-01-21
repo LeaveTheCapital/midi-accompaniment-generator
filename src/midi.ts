@@ -194,7 +194,7 @@ WebMidi.enable({
     if (err) {
       console.log("WebMidi could not be enabled.", err);
     } else {
-      console.log("WebMidi enabled!");
+      console.log("WebMidi enabled!111");
 
       const inputSelectEle = document.getElementById(
         "input-device-select"

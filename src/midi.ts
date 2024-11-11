@@ -1,5 +1,5 @@
 import { getPotentialNotes } from "./getPotentialNotes";
-import { generateMajorScales, scaleLookup } from "./generateMajorScales";
+import { generateMajorScales, scaleLookup, scaleLookupByName } from "./generateMajorScales";
 
 // const WebMidi = require("webmidi");
 import { Input, NoteMessageEvent, Output, WebMidi } from "webmidi";
@@ -45,6 +45,26 @@ attachAccompanimentTypeHandlers();
 appendOptionsToChannelSelectElement("input");
 appendOptionsToChannelSelectElement("output");
 appendChannelSelectListeners();
+
+attachNoteOnMessageToOnScreenKeyboard();
+
+function attachNoteOnMessageToOnScreenKeyboard () {
+  const keyboardKeys = document.getElementById("keyboard-list")?.getElementsByTagName("li") ?? [];
+  const keysArray = Array.from(keyboardKeys);
+
+  keysArray.forEach(key => {
+    key.addEventListener("click", (e) => {
+      const noteName = (<HTMLLIElement>e?.target)?.classList[1];
+      noteOnListener({
+       note: { 
+        number: +scaleLookupByName[noteName], 
+        name: noteName, 
+        octave: 3
+      } 
+    });
+  });
+  });
+}
 
 function appendOptionsToDeviceSelectElement (
   namesArray: string[],
@@ -105,7 +125,9 @@ export function noteOnListener (
     matchingKeyFromKeyboardEle.className += " active";
   }
 
+  
   window.notesPlayed.push(pureNoteNumber);
+  console.log("notesPlayed", window.notesPlayed);
 
   const lastNNotes = window.notesPlayed.slice(
     -numberOfNotesToConsider,
@@ -197,7 +219,7 @@ export function noteOnListener (
         time: WebMidi.time + 10,
         duration: 500,
         attack: 0.75 // changed velocity to attack
-        // velocity: 0.75,
+        // velocity: 0.75
       });
     }
   }

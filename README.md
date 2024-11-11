@@ -25,7 +25,3 @@ website choooses Port 1 as input and Port 2 as output
 
 Midi Ox - route Port1 to MS Wavetable Synth so that you can hear both of them.
 Open another software synth e.g. OB-Xd and route Port 2 to that.
-
-d and dsharp over and over
-then e
-caused empty array at guessNoteNumber

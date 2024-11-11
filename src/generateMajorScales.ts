@@ -12,7 +12,22 @@ export const scaleLookup = {
   "8": "G#",
   "9": "A",
   "10": "A#",
-  "11": "B",
+  "11": "B"
+};
+
+export const scaleLookupByName: Record<string,string> = {
+  "C": "0",
+  "C#": "1",
+  "D": "2",
+  "D#": "3",
+  "E": "4",
+  "F": "5",
+  "F#": "6",
+  "G": "7",
+  "G#": "8",
+  "A": "9",
+  "A#": "10",
+  "B": "11"
 };
 
 export function generateMajorScales() {
@@ -29,7 +44,7 @@ export function generateMajorScales() {
     "8": "G#",
     "9": "A",
     "10": "A#",
-    "11": "B",
+    "11": "B"
   };
 
   const scales: Record<string, IScale> = {};
@@ -39,7 +54,7 @@ export function generateMajorScales() {
       notes: mapping.map((note) => (note + i) % 12),
       numberOfMatches: 0,
       confidence: 0,
-      name: scaleLookup[i.toString()],
+      name: scaleLookup[i.toString()]
     };
   }
   return scales;

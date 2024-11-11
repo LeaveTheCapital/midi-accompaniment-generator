@@ -1,7 +1,7 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.generateMajorScales = exports.scaleLookup = void 0;
+exports.generateMajorScales = exports.scaleLookupByName = exports.scaleLookup = void 0;
 exports.scaleLookup = {
     "0": "C",
     "1": "C#",
@@ -14,7 +14,21 @@ exports.scaleLookup = {
     "8": "G#",
     "9": "A",
     "10": "A#",
-    "11": "B",
+    "11": "B"
+};
+exports.scaleLookupByName = {
+    "C": "0",
+    "C#": "1",
+    "D": "2",
+    "D#": "3",
+    "E": "4",
+    "F": "5",
+    "F#": "6",
+    "G": "7",
+    "G#": "8",
+    "A": "9",
+    "A#": "10",
+    "B": "11"
 };
 function generateMajorScales() {
     const mapping = [0, 2, 4, 5, 7, 9, 11];
@@ -30,7 +44,7 @@ function generateMajorScales() {
         "8": "G#",
         "9": "A",
         "10": "A#",
-        "11": "B",
+        "11": "B"
     };
     const scales = {};
     // exports.scales = scales;
@@ -39,7 +53,7 @@ function generateMajorScales() {
             notes: mapping.map((note) => (note + i) % 12),
             numberOfMatches: 0,
             confidence: 0,
-            name: scaleLookup[i.toString()],
+            name: scaleLookup[i.toString()]
         };
     }
     return scales;
@@ -64,11 +78,12 @@ function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
     let scalesToUse = [];
     let scaleOfChoice = null;
     for (const scaleName in scales) {
+        // eslint-disable-next-line no-prototype-builtins
         if (scales.hasOwnProperty(scaleName)) {
             const currentScale = scales[scaleName];
             let nonMatches = 0;
             const allMatches = notesPlayed.filter((note) => {
-                const isMatch = -1 !== currentScale.notes.indexOf(note);
+                const isMatch = currentScale.notes.indexOf(note) !== -1;
                 if (!isMatch) {
                     nonMatches++;
                 }
@@ -103,7 +118,7 @@ function getPotentialNotes(notesPlayed, scales, scaleWithMostMatches) {
         const potentialNotesSet = new Set(potentialNotes);
         finalNotes = Array.from(potentialNotesSet);
     }
-    return { possibleNotes: finalNotes, scaleOfChoice: scaleOfChoice };
+    return { possibleNotes: finalNotes, scaleOfChoice };
 }
 exports.getPotentialNotes = getPotentialNotes;
 
@@ -129,6 +144,25 @@ attachAccompanimentTypeHandlers();
 appendOptionsToChannelSelectElement("input");
 appendOptionsToChannelSelectElement("output");
 appendChannelSelectListeners();
+attachNoteOnMessageToOnScreenKeyboard();
+function attachNoteOnMessageToOnScreenKeyboard() {
+    var _a, _b;
+    const keyboardKeys = (_b = (_a = document.getElementById("keyboard-list")) === null || _a === void 0 ? void 0 : _a.getElementsByTagName("li")) !== null && _b !== void 0 ? _b : [];
+    const keysArray = Array.from(keyboardKeys);
+    keysArray.forEach(key => {
+        key.addEventListener("click", (e) => {
+            var _a;
+            const noteName = (_a = e === null || e === void 0 ? void 0 : e.target) === null || _a === void 0 ? void 0 : _a.classList[1];
+            noteOnListener({
+                note: {
+                    number: +generateMajorScales_1.scaleLookupByName[noteName],
+                    name: noteName,
+                    octave: 3
+                }
+            });
+        });
+    });
+}
 function appendOptionsToDeviceSelectElement(namesArray, selectEle, inputOrOutput) {
     const addSelectedIfFirstOptionOrFoundInLocalStorage = (index, deviceName, inputOrOutput) => index === 0 || deviceName === localStorage.getItem(`${inputOrOutput}Device`)
         ? " selected"
@@ -146,7 +180,9 @@ function appendOptionsToDeviceSelectElement(namesArray, selectEle, inputOrOutput
 }
 let input;
 let output;
-function noteOnListener(e) {
+function noteOnListener(e
+// , notesPlayed: number[]
+) {
     var _a, _b;
     console.log("Received 'noteon' message (" + e.note.name + e.note.octave + ").", e.note.number);
     const pureNoteNumber = e.note.number % 12;
@@ -163,12 +199,13 @@ function noteOnListener(e) {
         matchingKeyFromKeyboardEle.className += " active";
     }
     window.notesPlayed.push(pureNoteNumber);
+    console.log("notesPlayed", window.notesPlayed);
     const lastNNotes = window.notesPlayed.slice(-numberOfNotesToConsider, window.notesPlayed.length);
     const { possibleNotes, scaleOfChoice } = (0, getPotentialNotes_1.getPotentialNotes)(lastNNotes, scales, scaleWithMostMatches);
     scaleWithMostMatches = (_a = scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.notes) !== null && _a !== void 0 ? _a : [];
     const detectedScaleElement = document.getElementById("detected-scale");
     if (detectedScaleElement !== null) {
-        detectedScaleElement.innerText = (_b = scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.name) !== null && _b !== void 0 ? _b : '';
+        detectedScaleElement.innerText = (_b = scaleOfChoice === null || scaleOfChoice === void 0 ? void 0 : scaleOfChoice.name) !== null && _b !== void 0 ? _b : "";
     }
     let noteToPlay = e.note.number;
     if (window.notesPlayed.length > 5) {
@@ -183,7 +220,7 @@ function noteOnListener(e) {
                 channels: outputChannel,
                 time: webmidi_1.WebMidi.time + 10,
                 duration: 500,
-                attack: 0.75, // changed velocity to attack
+                attack: 0.75 // changed velocity to attack
             });
         }
         else if (accompanimentTypePreference === "random_from_detected_scale") {
@@ -201,7 +238,7 @@ function noteOnListener(e) {
                 channels: outputChannel,
                 time: webmidi_1.WebMidi.time + 30,
                 duration: 500,
-                attack: 0.75, // changed velocity to attack
+                attack: 0.75 // changed velocity to attack
             });
         }
         else if (accompanimentTypePreference === "harmony") {
@@ -219,7 +256,7 @@ function noteOnListener(e) {
                 time: webmidi_1.WebMidi.time + 10,
                 duration: 500,
                 attack: 0.75 // changed velocity to attack
-                // velocity: 0.75,
+                // velocity: 0.75
             });
         }
     }
@@ -252,15 +289,15 @@ webmidi_1.WebMidi.enable({
             // , notesPlayed
             ), { channels: inputChannel });
         }
-    },
+    }
 });
-let startButton = document.getElementById("start");
-startButton
-    ? (startButton.onclick = function () {
+const startButton = document.getElementById("start");
+if (startButton) {
+    startButton.onclick = function () {
         console.log(webmidi_1.WebMidi.inputs);
         console.log(webmidi_1.WebMidi.outputs);
         // let output = WebMidi.getOutputByName("EIE");
-        let output = webmidi_1.WebMidi.outputs[0];
+        const output = webmidi_1.WebMidi.outputs[0];
         for (let i = 1; i < 9; i++) {
             output.playNote(`C${i}`, { channels: 1, time: webmidi_1.WebMidi.time * i });
             output.playNote(`F${i}`, { channels: 1, time: webmidi_1.WebMidi.time * i + 150 });
@@ -275,23 +312,25 @@ startButton
             // oscillator.start(0);
         }
         /* output.playNote("D6", 1, {time: 600});
-    output.playNote(100, 1, {time: 800});
-    output.playNote("G2", 1, {time: 100}); */
+      output.playNote(100, 1, {time: 800});
+      output.playNote("G2", 1, {time: 100}); */
         /* .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
-    .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
-    .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
-    .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
-    .stopNote("G5", 1, {time: 1000});    // After 1.2 s. */
-    })
-    : null;
+      .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
+      .sendPitchBend(-0.5, 1, {time: 400}) // After 400 ms.
+      .sendPitchBend(0.5, 1, {time: 1200})  // After 800 ms.
+      .stopNote("G5", 1, {time: 1000});    // After 1.2 s. */
+    };
+}
 function displayNumberOfNotes() {
-    let ele = document.getElementById("numberOfNotes");
+    const ele = document.getElementById("numberOfNotes");
     if (ele) {
         ele.innerHTML = `Considering last <span class="number-of-notes">${numberOfNotesToConsider}</span> notes`;
     }
 }
 function attachAccompanimentTypeHandlers() {
-    const radios = document.getElementsByName("accompaniment-type");
+    const radios = document.getElementsByName("accompaniment-type"
+    // eslint-disable-next-line no-undef
+    );
     for (let i = 0; i < radios.length; i++) {
         radios[i].onclick = function () {
             accompanimentTypePreference = radios[i].value;
@@ -311,12 +350,12 @@ function appendOptionsToChannelSelectElement(inputOrOutput) {
 function appendChannelSelectListeners() {
     const inputChannelEle = document.getElementById("input-channel-select");
     const outputChannelEle = document.getElementById("output-channel-select");
-    inputChannelEle
-        ? inputChannelEle.addEventListener("change", (evt) => (inputChannel = parseInt(evt.target.value)))
-        : null;
-    outputChannelEle
-        ? outputChannelEle.addEventListener("change", (evt) => (outputChannel = parseInt(evt.target.value)))
-        : null;
+    if (inputChannelEle) {
+        inputChannelEle.addEventListener("change", (evt) => (inputChannel = parseInt(evt.target.value)));
+    }
+    if (outputChannelEle) {
+        outputChannelEle.addEventListener("change", (evt) => (outputChannel = parseInt(evt.target.value)));
+    }
 }
 function inputSelectChanged(evt) {
     input.removeListener("noteon", noteOnListener, { channels: inputChannel });

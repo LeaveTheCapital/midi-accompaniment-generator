@@ -98,7 +98,7 @@ a {
   margin: 0;
   background: -webkit-linear-gradient(left, purple, orange);
   -webkit-background-clip: text;
-  background-clip: inherit;
+  /* background-clip: inherit; */
   -webkit-text-fill-color: transparent;
   min-height: 5.8rem;
 }

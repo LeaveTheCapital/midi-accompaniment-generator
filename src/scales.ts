@@ -9,7 +9,7 @@ for (let noteOfTheScales = 0; noteOfTheScales < 12; noteOfTheScales++) {
   scales[noteOfTheScales.toString()] = {
     notes: majorScaleMapping.map((note) => (note + noteOfTheScales) % 12),
     numberOfMatches: 0,
-    confidence: 0,
+    confidence: 0
   };
 }
 
@@ -19,7 +19,7 @@ for (let i = 0; i < 20; i++) {
   const element = Math.ceil(Math.random() * 12) - 1;
   notes.push(element);
 }
-function getPotentialNotes(notesPlayed: number[]) {
+function getPotentialNotes (notesPlayed: number[]) {
   let mostSoFar = 0;
 
   let countWithMostMatches = 0;
@@ -30,11 +30,12 @@ function getPotentialNotes(notesPlayed: number[]) {
 
   // TODO scales should probably not be mutated
   for (const scale in scales) {
+    // eslint-disable-next-line no-prototype-builtins
     if (scales.hasOwnProperty(scale)) {
       const currentScale = scales[scale];
       let nonMatches = 0;
       const allMatches = notesPlayed.filter((note) => {
-        const isMatch = -1 !== currentScale.notes.indexOf(note);
+        const isMatch = currentScale.notes.indexOf(note) !== -1;
         if (!isMatch) {
           nonMatches++;
         }
@@ -89,7 +90,7 @@ function getPotentialNotes(notesPlayed: number[]) {
 
 const finalNotes = getPotentialNotes(notes);
 
-let p = document.getElementById("display");
+const p = document.getElementById("display");
 if (p) {
   p.innerText = "display" + finalNotes;
 }

@@ -7,17 +7,22 @@ import { IScale } from "./interfaces/IScale";
  * @param  {scales} scales object containing all major scale information
  * @return {Object}      possibleNotes - array of all notes which can be played as accompaniment, scaleOfChoice - most likely scale being played
  */
-export function getPotentialNotes(notesPlayed: number[], scales: Record<string,IScale>, scaleWithMostMatches: number[]) {
+export function getPotentialNotes (
+  notesPlayed: number[],
+  scales: Record<string, IScale>,
+  scaleWithMostMatches: number[]
+) {
   let mostSoFar = 0;
   let countWithMostMatches = 0;
   let scalesToUse: string[] = [];
   let scaleOfChoice: IScale | null = null;
   for (const scaleName in scales) {
+    // eslint-disable-next-line no-prototype-builtins
     if (scales.hasOwnProperty(scaleName)) {
       const currentScale = scales[scaleName];
       let nonMatches = 0;
       const allMatches = notesPlayed.filter((note) => {
-        const isMatch = -1 !== currentScale.notes.indexOf(note);
+        const isMatch = currentScale.notes.indexOf(note) !== -1;
         if (!isMatch) {
           nonMatches++;
         }
@@ -54,5 +59,5 @@ export function getPotentialNotes(notesPlayed: number[], scales: Record<string,I
     finalNotes = Array.from(potentialNotesSet);
   }
 
-  return { possibleNotes: finalNotes, scaleOfChoice: scaleOfChoice };
+  return { possibleNotes: finalNotes, scaleOfChoice };
 }

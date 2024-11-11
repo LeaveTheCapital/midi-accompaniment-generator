@@ -3,9 +3,7 @@
         "browser": true,
         "es2021": true
     },
-    "extends": [
-        "standard"
-    ],
+    "extends": [],
     "parser": "@typescript-eslint/parser",
     "parserOptions": {
         "ecmaVersion": "latest",
@@ -16,7 +14,17 @@
         "eslint-plugin-html"
     ],
     "rules": {
-        "quotes": ["error", "double"],
-        "semi": ["error", "always"]
+        "quotes": [
+            "error",
+            "double"
+        ],
+        "semi": [
+            "error",
+            "always"
+        ],
+        "comma-dangle": [
+            "warn",
+            "never"
+        ]
     }
 }

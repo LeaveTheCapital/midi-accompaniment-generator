@@ -17,12 +17,12 @@ jest.mock("webmidi", () => ({
   // enable: (callback) => callback(null),
   WebMidi: {
     enable: (options: {callback: () => {}}) => {
-      options.callback()
+      options.callback();
     },
     inputs: [{ addListener: () => {} }],
     outputs: [{ playNote: (noteToPlay: number) => {
       lastNotePlayed = noteToPlay;
-    } }],
+    } }]
     
   }
 }));
@@ -128,8 +128,8 @@ describe("noteOnListener", function () {
       note: {
         name: "E",
         octave: 5,
-        number: 64,
-      },
+        number: 64
+      }
     };
     window.notesPlayed = [60, 62, 65, 67, 69, 71];
     noteOnListener(e7);
@@ -139,13 +139,13 @@ describe("noteOnListener", function () {
       note: {
         name: "D",
         octave: 5,
-        number: 62,
-      },
+        number: 62
+      }
     };
     window.notesPlayed = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1];
     noteOnListener(
       dNoteEvent
     );
-    expect(lastNotePlayed).to.equal(62)
+    expect(lastNotePlayed).to.equal(62);
   });
 });

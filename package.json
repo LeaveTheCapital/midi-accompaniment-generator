@@ -30,6 +30,8 @@
     "mocha": "8.1.0"
   },
   "scripts": {
+    "lint": "eslint src/**/* test/**/*",
+    "lint:fix": "eslint --fix src/**/* test/**/*",
     "test": "jest --watchAll",
     "browserify": "tsc && browserify dist/midi.js -o website/bundle.js",
     "watch": "simplifyify -w -o website/bundle.js src/midi.ts",
